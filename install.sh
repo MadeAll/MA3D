@@ -42,6 +42,7 @@ add_updater()
     echo "primary_branch: main" >> "$MOONRAKER_CONFIG"
     echo "origin: https://github.com/MadeAll/MA3D.git" >> "$MOONRAKER_CONFIG"
     echo "is_system_service: False" >> "$MOONRAKER_CONFIG"
+    echo "managed_services: MA3D" >> "$MOONRAKER_CONFIG"
     echo "\n" >> "$MOONRAKER_CONFIG"
     echo "[OK]"
 
