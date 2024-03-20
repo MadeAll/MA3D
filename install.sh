@@ -1,8 +1,23 @@
-MOONRAKER_CONFIG="${HOME}/printer_data/config/moonraker.conf"
-MOONRAKER_FALLBACK="${HOME}/klipper_config/moonraker.conf"
-SYSTEMDDIR="/etc/systemd/system"
-KLIPPER_PATH="${HOME}/klipper"
+#!/bin/bash
+
 SRCDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/ && pwd )"
+KLIPPER_PATH="${HOME}/klipper"
+SYSTEMDDIR="/etc/systemd/system"
+MOONRAKER_CONFIG="${HOME}/printer_data/config/moonraker.conf"
+
+# Force script to exit if an error occurs
+set -e
+
+# Step 1: Check for root user
+verify_ready()
+{
+    # check for root user
+    if [ "$EUID" -eq 0 ]; then
+        echo "This script must not run as root"
+        exit -1
+    fi
+    echo "User Verified..."
+}
 
 add_updater()
 {
@@ -25,4 +40,5 @@ add_updater()
 }
 
 # Run steps
+verify_ready
 add_updater  
