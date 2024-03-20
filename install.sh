@@ -29,6 +29,7 @@ add_updater()
         echo "path: ${SRCDIR}" >> "$MOONRAKER_CONFIG"
         echo "origin: https://oauth2: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@github.com/MadeAll/MA3D.git" >> "$MOONRAKER_CONFIG"
         echo -e "\n" >> "$MOONRAKER_CONFIG"
+        echo "is_system_service: False" >> "$MOONRAKER_CONFIG"
         echo "[OK]"
 
         echo -n "Restarting Moonraker... "
