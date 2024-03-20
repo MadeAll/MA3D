@@ -1,0 +1,22 @@
+[Unit]
+Description=MA3D - 3D Printer Management and Enhancement Plugin
+Documentation=https://github.com/YourGitHub/MA3D
+After=network-online.target nss-lookup.target klipper.service moonraker.service
+Wants=network-online.target
+Before=moonraker.service
+StartLimitBurst=5
+StartLimitIntervalSec=120
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+User=biqu # 또는 해당 시스템에서 사용하는 사용자 계정
+RemainAfterExit=No
+WorkingDirectory=/home/pi/MA3D
+# 환경 변수 파일이 있다면 EnvironmentFile= 라인을 추가하세요
+# EnvironmentFile=/home/pi/MA3D/env_file
+ExecStart=/usr/bin/python3 /home/pi/MA3D/ma3d.py $MA3D_ARGS
+Restart=on-failure
+RestartSec=10
