@@ -1,4 +1,5 @@
-# ma3d.py
+#!/usr/bin/env python3
+
 import time
 import datetime
 
