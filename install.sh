@@ -40,12 +40,13 @@ add_updater()
 
     echo -n "Adding or updating update manager in moonraker.conf... "
     # Now append the new updater configuration
-    echo -e "\n[update_manager MA3D]" >> "$MOONRAKER_CONFIG"
+    echo "\n[update_manager MA3D]" >> "$MOONRAKER_CONFIG"
     echo "type: git_repo" >> "$MOONRAKER_CONFIG"
     echo "path: $MA3D_DIR" >> "$MOONRAKER_CONFIG"
     echo "primary_branch: main" >> "$MOONRAKER_CONFIG"
-    echo "origin: https://oauth2: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@github.com/MadeAll/MA3D.git" >> "$MOONRAKER_CONFIG"    echo "managed_services: MA3D" >> "$MOONRAKER_CONFIG"
-    echo -e "\n" >> "$MOONRAKER_CONFIG"
+    echo "origin: https://oauth2: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@github.com/MadeAll/MA3D.git" >> "$MOONRAKER_CONFIG"
+    echo "managed_services: MA3D" >> "$MOONRAKER_CONFIG"
+    echo "\n" >> "$MOONRAKER_CONFIG"
     echo "[OK]"
 
     echo -n "Restarting Moonraker... "
