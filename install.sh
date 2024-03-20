@@ -4,7 +4,7 @@ SRCDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/ && pwd )"
 KLIPPER_PATH="${HOME}/klipper"
 SYSTEMDDIR="/etc/systemd/system"
 MOONRAKER_CONFIG="${HOME}/printer_data/config/moonraker.conf"
-MA3D_SERVICE="${SYSTEMDDIR}/MA3D.service"
+MA3D_SERVICE="${SYSTEMDDIR}/ma3d.service"
 MA3D_DIR="${HOME}/MA3D"
 MA3D_ENV="${HOME}/ma3d-env" # 가상 환경 경로가 있다면 이를 사용하시오
 CURRENT_USER=${USER}
@@ -27,7 +27,7 @@ add_updater()
 {
     echo -n "Checking for existing update manager in moonraker.conf... "
     # Define pattern to search for the existing updater section
-    start_pattern='^\[update_manager[a-z ]* MA3D\]'
+    start_pattern='^\[update_manager[a-z ]* ma3d\]'
     end_pattern='^\['
     # Use awk to remove the existing section if it exists
     # This awk script checks lines between start_pattern and the next section start (end_pattern)
@@ -40,12 +40,12 @@ add_updater()
 
     echo -n "Adding or updating update manager in moonraker.conf... "
     # Now append the new updater configuration
-    echo "\n[update_manager MA3D]" >> "$MOONRAKER_CONFIG"
+    echo "\n[update_manager ma3d]" >> "$MOONRAKER_CONFIG"
     echo "type: git_repo" >> "$MOONRAKER_CONFIG"
     echo "path: $MA3D_DIR" >> "$MOONRAKER_CONFIG"
     echo "primary_branch: main" >> "$MOONRAKER_CONFIG"
     echo "origin: https://oauth2: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@github.com/MadeAll/MA3D.git" >> "$MOONRAKER_CONFIG"
-    echo "managed_services: MA3D" >> "$MOONRAKER_CONFIG"
+    echo "managed_services: ma3d" >> "$MOONRAKER_CONFIG"
     echo "\n" >> "$MOONRAKER_CONFIG"
     echo "[OK]"
 
