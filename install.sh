@@ -65,7 +65,7 @@ After=network-online.target moonraker.service
 [Service]
 Type=simple
 User=$CURRENT_USER
-ExecStart=/usr/bin/python $MA3D_DIR/ma3d.py
+ExecStart=/usr/bin/python3 $MA3D_DIR/ma3d.py
 Restart=always
 RestartSec=5
 
