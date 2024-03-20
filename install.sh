@@ -4,6 +4,10 @@ SRCDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/ && pwd )"
 KLIPPER_PATH="${HOME}/klipper"
 SYSTEMDDIR="/etc/systemd/system"
 MOONRAKER_CONFIG="${HOME}/printer_data/config/moonraker.conf"
+MA3D_SERVICE="${SYSTEMDDIR}/ma3d.service"
+MA3D_DIR="${HOME}/MA3D"
+MA3D_ENV="${HOME}/ma3d-env" # 가상 환경 경로가 있다면 이를 사용하시오
+CURRENT_USER=${USER}
 
 # Force script to exit if an error occurs
 set -e
@@ -36,13 +40,12 @@ add_updater()
 
     echo -n "Adding or updating update manager in moonraker.conf... "
     # Now append the new updater configuration
-    echo "\n[update_manager MA3D]" >> "$MOONRAKER_CONFIG"
+    echo -e "\n[update_manager MA3D]" >> "$MOONRAKER_CONFIG"
     echo "type: git_repo" >> "$MOONRAKER_CONFIG"
-    echo "path: ~/MA3D" >> "$MOONRAKER_CONFIG"
+    echo "path: $MA3D_DIR" >> "$MOONRAKER_CONFIG"
     echo "primary_branch: main" >> "$MOONRAKER_CONFIG"
-    echo "origin: https://oauth2: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@github.com/MadeAll/MA3D.git" >> "$MOONRAKER_CONFIG"
-    echo "managed_services: MA3D" >> "$MOONRAKER_CONFIG"
-    echo "\n" >> "$MOONRAKER_CONFIG"
+    echo "origin: https://oauth2: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@github.com/MadeAll/MA3D.git" >> "$MOONRAKER_CONFIG"    echo "managed_services: MA3D" >> "$MOONRAKER_CONFIG"
+    echo -e "\n" >> "$MOONRAKER_CONFIG"
     echo "[OK]"
 
     echo -n "Restarting Moonraker... "
@@ -50,6 +53,34 @@ add_updater()
     echo "[OK]"
 }
 
+create_service()
+{
+    echo -n "Creating $MA3D_SERVICE systemd service file... "
+    sudo bash -c "cat > $MA3D_SERVICE" <<EOF
+[Unit]
+Description=MA3D Service for 3D Printer Management
+After=network-online.target moonraker.service
+
+[Service]
+Type=simple
+User=$CURRENT_USER
+ExecStart=/usr/bin/python $MA3D_DIR/ma3d.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    echo "[OK]"
+
+    echo -n "Enabling and starting $MA3D_SERVICE... "
+    sudo systemctl enable ma3d.service
+    sudo systemctl start ma3d.service
+    echo "[OK]"
+}
+
 # Run steps
 verify_ready
-add_updater  
+add_updater
+create_service
