@@ -4,6 +4,7 @@
 SRCDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/ && pwd)"
 KLIPPER_PATH="${HOME}/klipper"
 SYSTEMDDIR="/etc/systemd/system"
+MOONRAKER_ASVC="${HOME}/printer_data/moonraker.asvc"
 MOONRAKER_CONFIG="${HOME}/printer_data/config/moonraker.conf"
 MA3D_SERVICE="${SYSTEMDDIR}/ma3d.service"
 MA3D_DIR="${HOME}/MA3D"
