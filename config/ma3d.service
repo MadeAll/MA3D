@@ -1,0 +1,13 @@
+[Unit]
+Description=MA3D Service for 3D Printer Management
+After=network-online.target moonraker.service
+
+[Service]
+Type=simple
+User=biqu
+ExecStart=/usr/bin/python3 ~/MA3D/ma3d.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
