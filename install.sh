@@ -48,7 +48,7 @@ add_updater()
     # Add service access to Moonraker, if not already present
     echo -n "Checking and updating moonraker.asvc... "
     if ! grep -q "ma3d" "$MOONRAKER_ASVC"; then
-        echo "ma3d" >> "$MOONRAKER_ASVC"
+        echo "\nma3d" >> "$MOONRAKER_ASVC"
         echo "[UPDATED]"
     else
         echo "[SKIPPED]"
