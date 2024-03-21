@@ -41,7 +41,7 @@ add_updater()
 
     echo -n "Adding or updating update manager in moonraker.conf... "
     # Append the new updater configuration from update_manager.txt
-    cat "update_manager.txt" >> "$MOONRAKER_CONFIG"
+    cat "./config/update_manager.txt" >> "$MOONRAKER_CONFIG"
     echo "[OK]"
 
     # Add service access to Moonraker, if not already present
