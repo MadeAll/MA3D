@@ -83,8 +83,7 @@ AWS_Connect()
 {
     echo -n "unzip AWS Certs..."
     sudo unzip AWS/connect_device_package.zip
-    sudo chmod +x start.sh
-    sudo ./start.sh
+    sudo sh ./AWS/start.sh
 }
 
 # Run steps
