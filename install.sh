@@ -82,8 +82,7 @@ restart_moonraker()
 AWS_Connect()
 {
     echo -n "unzip AWS Certs..."
-    sudo cd AWS
-    sudo unzip connect_device_package.zip
+    sudo unzip AWS/connect_device_package.zip
     sudo chmod +x start.sh
     sudo ./start.sh
 }

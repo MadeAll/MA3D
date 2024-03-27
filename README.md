@@ -28,7 +28,7 @@ Navigate to the cloned repository directory and execute the install script:
 
 ```
 cd MA3D
-./install.sh
+sh ./install.sh
 ```
 
 This script automates the setup process, including updating the Moonraker configuration and setting up a systemd service for the MA3D plugin.
