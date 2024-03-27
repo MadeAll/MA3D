@@ -16,9 +16,9 @@ def mqtt_connect():
 
     mqtt_connection = mqtt_connection_builder.mtls_from_path(
         endpoint = "a2k61xlc47ga1s-ats.iot.us-east-1.amazonaws.com",
-        cert_filepath="MA3D/AWS/L0Xi6p3yoBqG8XWbaGf7.cert.pem",
-        pri_key_filepath="MA3D/AWS/L0Xi6p3yoBqG8XWbaGf7.private.key",
-        ca_filepath="MA3D/AWS/root-CA.crt",
+        cert_filepath="AWS/L0Xi6p3yoBqG8XWbaGf7.cert.pem",
+        pri_key_filepath="AWS/L0Xi6p3yoBqG8XWbaGf7.private.key",
+        ca_filepath="AWS/root-CA.crt",
         client_bootstrap=client_bootstrap,
         client_id="test-client",
         clean_session=False,
