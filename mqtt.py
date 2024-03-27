@@ -12,7 +12,7 @@ endpoint = "a2k61xlc47ga1s-ats.iot.us-east-1.amazonaws.com"
 cert = "./AWS/L0Xi6p3yoBqG8XWbaGf7.cert.pem"
 key = "./AWS/L0Xi6p3yoBqG8XWbaGf7.private.key"
 root_ca = "./AWS/root-CA.crt"
-client_id = "basicPubSub"
+client_id = "L0Xi6p3yoBqG8XWbaGf7"
 topic = "L0Xi6p3yoBqG8XWbaGf7/cmd"
 
 # 연결 중단 시 호출될 콜백
