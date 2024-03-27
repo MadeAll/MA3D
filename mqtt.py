@@ -13,7 +13,7 @@ cert = "./AWS/L0Xi6p3yoBqG8XWbaGf7.cert.pem"
 key = "./AWS/L0Xi6p3yoBqG8XWbaGf7.private.key"
 root_ca = "./AWS/root-CA.crt"
 client_id = "basicPubSub"
-topic = "sdk/test/python"
+topic = "L0Xi6p3yoBqG8XWbaGf7/cmd"
 
 # 연결 중단 시 호출될 콜백
 def on_connection_interrupted(connection, error, **kwargs):
@@ -53,14 +53,14 @@ def main():
     mqtt_connection = setup_mqtt_connection()
     
     # 토픽 구독
-    logger.info(f"Subscribing to topic L0Xi6p3yoBqG8XWbaGf7/cmd ...")
+    logger.info(f"Subscribing to topic '{topic}'...")
     subscribe_future, packet_id = mqtt_connection.subscribe(
-        topic="L0Xi6p3yoBqG8XWbaGf7/cmd",
+        topic=topic,
         qos=mqtt.QoS.AT_LEAST_ONCE,
         callback=on_message_received
     )
     subscribe_future.result()  # 구독 완료까지 대기
-    logger.info(f"Subscribed to L0Xi6p3yoBqG8XWbaGf7/cmd")
+    logger.info(f"Subscribed to '{topic}'")
 
     # 메시지 발행 (실제 사용 시 필요에 따라 구현)
     # publish_message(mqtt_connection)
