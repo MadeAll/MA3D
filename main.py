@@ -6,7 +6,7 @@ def main():
     logger.info("Application started")
 
     try:
-        mqtt_connection = mqtt.mqtt_connect()
+        mqtt_connection = mqtt.setup_mqtt_connection()
         mqtt_connection.subscribe("your/topic", mqtt.QoS.AT_LEAST_ONCE, mqtt.on_message_received)
         logger.info("Subscribed to MQTT topic")
 
