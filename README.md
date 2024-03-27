@@ -18,6 +18,10 @@ To install the MA3D plugin, follow these steps:
 git clone https://oauth2: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@github.com/MadeAll/MA3D.git
 ```
 
+2. **ADD AWS IoT Certs**
+
+Upload connect_device_package.zip File to MA3D/AWS
+
 2. **Run the Installation Script**
 
 Navigate to the cloned repository directory and execute the install script:
