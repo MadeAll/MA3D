@@ -46,21 +46,21 @@ def setup_mqtt_connection():
     connect_future = mqtt_connection.connect()
     connect_future.result()  # 연결 완료까지 대기
     logger.info("Connected to MQTT broker")
-
+    
     return mqtt_connection
 
 def main():
     mqtt_connection = setup_mqtt_connection()
     
     # 토픽 구독
-    logger.info(f"Subscribing to topic '{topic}'...")
+    logger.info(f"Subscribing to topic L0Xi6p3yoBqG8XWbaGf7/cmd ...")
     subscribe_future, packet_id = mqtt_connection.subscribe(
-        topic=topic,
+        topic="L0Xi6p3yoBqG8XWbaGf7/cmd",
         qos=mqtt.QoS.AT_LEAST_ONCE,
         callback=on_message_received
     )
     subscribe_future.result()  # 구독 완료까지 대기
-    logger.info(f"Subscribed to '{topic}'")
+    logger.info(f"Subscribed to L0Xi6p3yoBqG8XWbaGf7/cmd")
 
     # 메시지 발행 (실제 사용 시 필요에 따라 구현)
     # publish_message(mqtt_connection)
