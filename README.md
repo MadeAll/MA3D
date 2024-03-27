@@ -22,7 +22,16 @@ git clone https://oauth2:github_pat_11AW7A7DA0y6xJpb0DSUeB_CcwQExjqoJN82w8THUHxi
 
 Upload connect_device_package.zip File to MA3D/AWS
 
-2. **Run the Installation Script**
+```
+cd AWS
+unzip connect_device_package.zip
+chmod +x start.sh
+./start.sh
+```
+
+After AWS MQTT Connection checked, Press Ctrl+C to kill Program.
+
+3. **Run the Installation Script**
 
 Navigate to the cloned repository directory and execute the install script:
 
@@ -33,7 +42,7 @@ sh ./install.sh
 
 This script automates the setup process, including updating the Moonraker configuration and setting up a systemd service for the MA3D plugin.
 
-3. **Verify Installation**
+4. **Verify Installation**
 
 Check the status of the MA3D service to ensure it is active and running:
 
