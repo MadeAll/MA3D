@@ -42,17 +42,19 @@ def getStatus(log):
         nozzle_target = temp_stats.get("tool0").get("target")
         bed_temp = temp_stats.get("bed").get("actual")
         bed_target = temp_stats.get("bed").get("target")
-        
-        
-        print = requests.get(url + "/server/files/metadata?filename={filename}")
+
+        print = requests.get(url + "/server/files/metadata?filename=" + filename)
         print = print.json()  # 응답을 JSON 딕셔너리로 변환
-        logger.info(f"print: {print}")
+        # 필요한 데이터 추출
+        file_stats = print.get("result", {})
+        estimated_time = file_stats.get("estimated_time")
 
         # 새로운 딕셔너리 생성
         extracted_data = {
             "status": status,
             "filename": filename,
             "print_duration": print_duration,
+            "estimated_time": estimated_time,
             "nozzle_temp": nozzle_temp,
             "nozzle_target": nozzle_target,
             "bed_temp": bed_temp,

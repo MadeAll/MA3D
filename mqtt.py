@@ -1,8 +1,8 @@
 from awscrt import mqtt, io
 from awsiot import mqtt_connection_builder
 import api_handler
+import threading
 import time
-import log
 
 # 로그 설정
 logger = None
@@ -49,6 +49,7 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
 # 타이머를 저장할 전역 변수
 timers = []
 
+
 def publish_status():
     global timers
     logger.info("Get Printer Status")
@@ -56,7 +57,7 @@ def publish_status():
     mqtt_connection.publish(
         topic=topic + "/status", payload=message, qos=mqtt.QoS.AT_LEAST_ONCE
     )
-    
+
     # 이전 타이머가 있으면 취소
     if timers:
         for timer in timers:
@@ -67,6 +68,7 @@ def publish_status():
     timer = threading.Timer(10.0, publish_status)
     timer.start()
     timers.append(timer)
+
 
 # 프로그램 종료 시 호출될 함수
 def cleanup():
