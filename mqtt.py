@@ -5,7 +5,7 @@ import time
 import log
 
 # 로그 설정
-logger = log.setup_logger()
+logger = None
 
 # AWS IoT Core 설정 (환경에 맞게 수정 필요)
 endpoint = "a2k61xlc47ga1s-ats.iot.us-east-1.amazonaws.com"
@@ -45,11 +45,14 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
         topic=response_topic, payload=response, qos=mqtt.QoS.AT_LEAST_ONCE
     )
 
+
 def publish_status():
-    message = api_handler.getStatus()
+    logger.info(f"Get Printer Status")
+    message = api_handler.getStatus(logger)
     mqtt_connection.publish(
-        topic=topic+"/status", payload=message, qos=mqtt.QoS.AT_LEAST_ONCE
+        topic=topic + "/status", payload=message, qos=mqtt.QoS.AT_LEAST_ONCE
     )
+
 
 def setup_mqtt_connection():
     global mqtt_connection
@@ -74,18 +77,19 @@ def setup_mqtt_connection():
     return mqtt_connection
 
 
-def main():
-    global mqtt_connection
+def main(log):
+    global logger
+    logger = log
     mqtt_connection = setup_mqtt_connection()
 
     # 토픽 구독
-    logger.info(f"Subscribing to topic '{topic}'/req ...")
+    logger.info(f"Subscribing to topic '{topic}/req' ...")
     subscribe_future, packet_id = mqtt_connection.subscribe(
-        topic=topic+'/req', qos=mqtt.QoS.AT_LEAST_ONCE, callback=on_message_received
+        topic=topic + "/req", qos=mqtt.QoS.AT_LEAST_ONCE, callback=on_message_received
     )
     subscribe_future.result()  # 구독 완료까지 대기
-    logger.info(f"Subscribed to '{topic}'/req")
-    
+    logger.info(f"Subscribed to '{topic}/req'")
+
     publish_status()
 
     # 연결 종료 처리 예시 (필요에 따라 적절한 종료 조건 추가)
