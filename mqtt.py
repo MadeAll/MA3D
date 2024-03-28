@@ -16,6 +16,9 @@ root_ca = "./AWS/root-CA.crt"
 client_id = "L0Xi6p3yoBqG8XWbaGf7"
 topic = "L0Xi6p3yoBqG8XWbaGf7/cmd"
 
+# 연결 객체 초기화
+mqtt_connection = None
+
 
 # 연결 중단 시 호출될 콜백
 def on_connection_interrupted(connection, error, **kwargs):
@@ -35,9 +38,18 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     logger.info(f"Received message from '{topic}': {message}")
     response = api_handler.main(message)
     logger.info(f"Publish message to '{topic}': {response}")
+    # 응답 토픽 정의 (예: {printerID}/res)
+    response_topic = topic.replace("/cmd", "/res")
+    logger.info(f"Publishing message to '{response_topic}': {response}")
+
+    # 메시지를 {printerID}/res 토픽으로 재전송
+    mqtt_connection.publish(
+        topic=response_topic, payload=response, qos=mqtt.QoS.AT_LEAST_ONCE
+    )
 
 
 def setup_mqtt_connection():
+    global mqtt_connection
     mqtt_connection = mqtt_connection_builder.mtls_from_path(
         endpoint=endpoint,
         cert_filepath=cert,
@@ -60,6 +72,7 @@ def setup_mqtt_connection():
 
 
 def main():
+    global mqtt_connection
     mqtt_connection = setup_mqtt_connection()
 
     # 토픽 구독
