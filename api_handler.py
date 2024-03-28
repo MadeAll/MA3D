@@ -28,12 +28,10 @@ def getStatus(log):
     try:
         stat = requests.get(url + "/printer/objects/query?print_stats")
         stat = stat.json()  # 응답을 JSON 딕셔너리로 변환
-        logger.info(f"stat: {stat}")
         # 필요한 데이터 추출
         print_stats = stat.get("result", {}).get("status", {}).get("print_stats", {})
         status = print_stats.get("state")
         filename = print_stats.get("filename")
-        total_duration = print_stats.get("total_duration")
         print_duration = print_stats.get("print_duration")
 
         temp = requests.get(url + "/api/printer")
@@ -44,12 +42,16 @@ def getStatus(log):
         nozzle_target = temp_stats.get("tool0").get("target")
         bed_temp = temp_stats.get("bed").get("actual")
         bed_target = temp_stats.get("bed").get("target")
+        
+        
+        print = requests.get(url + "/server/files/metadata?filename={filename}")
+        print = print.json()  # 응답을 JSON 딕셔너리로 변환
+        logger.info(f"print: {print}")
 
         # 새로운 딕셔너리 생성
         extracted_data = {
             "status": status,
             "filename": filename,
-            "total_duration": total_duration,
             "print_duration": print_duration,
             "nozzle_temp": nozzle_temp,
             "nozzle_target": nozzle_target,

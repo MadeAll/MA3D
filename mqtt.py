@@ -46,12 +46,34 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     )
 
 
+# 타이머를 저장할 전역 변수
+timers = []
+
 def publish_status():
-    logger.info(f"Get Printer Status")
+    global timers
+    logger.info("Get Printer Status")
     message = api_handler.getStatus(logger)
     mqtt_connection.publish(
         topic=topic + "/status", payload=message, qos=mqtt.QoS.AT_LEAST_ONCE
     )
+    
+    # 이전 타이머가 있으면 취소
+    if timers:
+        for timer in timers:
+            timer.cancel()
+        timers.clear()
+
+    # 새 타이머 생성 및 시작
+    timer = threading.Timer(10.0, publish_status)
+    timer.start()
+    timers.append(timer)
+
+# 프로그램 종료 시 호출될 함수
+def cleanup():
+    global timers
+    for timer in timers:
+        timer.cancel()
+    logger.info("Cleaned up timers.")
 
 
 def setup_mqtt_connection():
@@ -100,6 +122,7 @@ def main(log):
         logger.info("Disconnecting from MQTT broker...")
         disconnect_future = mqtt_connection.disconnect()
         disconnect_future.result()
+        cleanup()
         logger.info("Disconnected")
 
 
