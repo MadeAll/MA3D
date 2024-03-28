@@ -13,7 +13,7 @@ cert = "./AWS/L0Xi6p3yoBqG8XWbaGf7.cert.pem"
 key = "./AWS/L0Xi6p3yoBqG8XWbaGf7.private.key"
 root_ca = "./AWS/root-CA.crt"
 client_id = "L0Xi6p3yoBqG8XWbaGf7"
-topic = "L0Xi6p3yoBqG8XWbaGf7/cmd"
+topic = "L0Xi6p3yoBqG8XWbaGf7"
 
 # 연결 객체 초기화
 mqtt_connection = None
@@ -36,16 +36,20 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     message = payload.decode("utf-8")
     logger.info(f"Received message from '{topic}': {message}")
     response = api_handler.main(message)
-    logger.info(f"Publish message to '{topic}': {response}")
+
     # 응답 토픽 정의 (예: {printerID}/res)
     response_topic = topic.replace("/cmd", "/res")
     logger.info(f"Publishing message to '{response_topic}': {response}")
-
     # 메시지를 {printerID}/res 토픽으로 재전송
     mqtt_connection.publish(
         topic=response_topic, payload=response, qos=mqtt.QoS.AT_LEAST_ONCE
     )
 
+def publish_status():
+    message = api_handler.getStatus()
+    mqtt_connection.publish(
+        topic=topic+"/status", payload=message, qos=mqtt.QoS.AT_LEAST_ONCE
+    )
 
 def setup_mqtt_connection():
     global mqtt_connection
@@ -75,12 +79,14 @@ def main():
     mqtt_connection = setup_mqtt_connection()
 
     # 토픽 구독
-    logger.info(f"Subscribing to topic '{topic}'...")
+    logger.info(f"Subscribing to topic '{topic}'/req ...")
     subscribe_future, packet_id = mqtt_connection.subscribe(
-        topic=topic, qos=mqtt.QoS.AT_LEAST_ONCE, callback=on_message_received
+        topic=topic+'/req', qos=mqtt.QoS.AT_LEAST_ONCE, callback=on_message_received
     )
     subscribe_future.result()  # 구독 완료까지 대기
-    logger.info(f"Subscribed to '{topic}'")
+    logger.info(f"Subscribed to '{topic}'/req")
+    
+    publish_status()
 
     # 연결 종료 처리 예시 (필요에 따라 적절한 종료 조건 추가)
     try:
