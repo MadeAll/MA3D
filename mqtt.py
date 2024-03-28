@@ -2,7 +2,6 @@ from awscrt import mqtt, io
 from awsiot import mqtt_connection_builder
 import api_handler
 import time
-import json
 import log
 
 # 로그 설정
