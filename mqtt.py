@@ -9,9 +9,9 @@ logger = None
 
 # AWS IoT Core 설정 (환경에 맞게 수정 필요)
 endpoint = "a2k61xlc47ga1s-ats.iot.us-east-1.amazonaws.com"
-cert = "./AWS/L0Xi6p3yoBqG8XWbaGf7.cert.pem"
-key = "./AWS/L0Xi6p3yoBqG8XWbaGf7.private.key"
-root_ca = "./AWS/root-CA.crt"
+cert = "/home/biqu/MA3D/AWS/L0Xi6p3yoBqG8XWbaGf7.cert.pem"
+key = "/home/biqu/MA3D/AWS/L0Xi6p3yoBqG8XWbaGf7.private.key"
+root_ca = "/home/biqu/MA3D/AWS/root-CA.crt"
 client_id = "L0Xi6p3yoBqG8XWbaGf7"
 topic = "L0Xi6p3yoBqG8XWbaGf7"
 
