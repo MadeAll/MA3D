@@ -1,6 +1,8 @@
 import requests
-import logging
 import json
+import base64
+from PIL import Image
+from io import BytesIO
 
 logger = None
 
@@ -49,6 +51,19 @@ def getStatus(log):
         file_stats = print.get("result", {})
         estimated_time = file_stats.get("estimated_time")
 
+        # 스냅샷 이미지 가져오기 및 처리
+        snapshot_response = requests.get(url + "/webcam/?action=snapshot")
+        if snapshot_response.status_code == 200:
+            img = Image.open(BytesIO(snapshot_response.content))
+            img_resized = img.resize(
+                (300, int((img.height / img.width) * 300))
+            )  # 가로 400px 비율 유지하여 리사이즈
+            buffered = BytesIO()
+            img_resized.save(buffered, format="JPEG")
+            snapshot_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        else:
+            snapshot_base64 = None  # 이미지를 가져오지 못한 경우
+
         # 새로운 딕셔너리 생성
         extracted_data = {
             "status": status,
@@ -59,6 +74,7 @@ def getStatus(log):
             "nozzle_target": nozzle_target,
             "bed_temp": bed_temp,
             "bed_target": bed_target,
+            "snapshot": snapshot_base64,
         }
 
         return json.dumps(extracted_data)  # JSON 문자열로 변환하여 반환

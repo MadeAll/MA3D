@@ -65,7 +65,7 @@ def publish_status():
         timers.clear()
 
     # 새 타이머 생성 및 시작
-    timer = threading.Timer(10.0, publish_status)
+    timer = threading.Timer(30.0, publish_status)
     timer.start()
     timers.append(timer)
 
