@@ -1,6 +1,7 @@
 import mqtt
 import log
 
+
 def main():
     logger = log.setup_logger()
     logger.info("Application started")
@@ -14,6 +15,7 @@ def main():
         logger.error(f"An error occurred: {e}")
     finally:
         logger.info("Application finished")
+
 
 if __name__ == "__main__":
     main()

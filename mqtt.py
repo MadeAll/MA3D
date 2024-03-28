@@ -1,5 +1,6 @@
 from awscrt import mqtt, io
 from awsiot import mqtt_connection_builder
+import api_handler
 import time
 import json
 import log
@@ -15,18 +16,26 @@ root_ca = "./AWS/root-CA.crt"
 client_id = "L0Xi6p3yoBqG8XWbaGf7"
 topic = "L0Xi6p3yoBqG8XWbaGf7/cmd"
 
+
 # 연결 중단 시 호출될 콜백
 def on_connection_interrupted(connection, error, **kwargs):
     logger.error(f"Connection interrupted: {error}")
 
+
 # 연결 재개 시 호출될 콜백
 def on_connection_resumed(connection, return_code, session_present, **kwargs):
-    logger.info(f"Connection resumed: return_code: {return_code}, session_present: {session_present}")
+    logger.info(
+        f"Connection resumed: return_code: {return_code}, session_present: {session_present}"
+    )
+
 
 # 메시지 수신 시 호출될 콜백
 def on_message_received(topic, payload, dup, qos, retain, **kwargs):
-    message = payload.decode('utf-8')
+    message = payload.decode("utf-8")
     logger.info(f"Received message from '{topic}': {message}")
+    response = api_handler.main(message)
+    logger.info(f"Publish message to '{topic}': {response}")
+
 
 def setup_mqtt_connection():
     mqtt_connection = mqtt_connection_builder.mtls_from_path(
@@ -38,7 +47,7 @@ def setup_mqtt_connection():
         clean_session=False,
         keep_alive_secs=30,
         on_connection_interrupted=on_connection_interrupted,
-        on_connection_resumed=on_connection_resumed
+        on_connection_resumed=on_connection_resumed,
     )
 
     # 연결 시도
@@ -46,24 +55,20 @@ def setup_mqtt_connection():
     connect_future = mqtt_connection.connect()
     connect_future.result()  # 연결 완료까지 대기
     logger.info("Connected to MQTT broker")
-    
+
     return mqtt_connection
+
 
 def main():
     mqtt_connection = setup_mqtt_connection()
-    
+
     # 토픽 구독
     logger.info(f"Subscribing to topic '{topic}'...")
     subscribe_future, packet_id = mqtt_connection.subscribe(
-        topic=topic,
-        qos=mqtt.QoS.AT_LEAST_ONCE,
-        callback=on_message_received
+        topic=topic, qos=mqtt.QoS.AT_LEAST_ONCE, callback=on_message_received
     )
     subscribe_future.result()  # 구독 완료까지 대기
     logger.info(f"Subscribed to '{topic}'")
-
-    # 메시지 발행 (실제 사용 시 필요에 따라 구현)
-    # publish_message(mqtt_connection)
 
     # 연결 종료 처리 예시 (필요에 따라 적절한 종료 조건 추가)
     try:
@@ -74,6 +79,7 @@ def main():
         disconnect_future = mqtt_connection.disconnect()
         disconnect_future.result()
         logger.info("Disconnected")
+
 
 if __name__ == "__main__":
     main()
