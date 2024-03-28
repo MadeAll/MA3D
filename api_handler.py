@@ -21,11 +21,14 @@ def main(message):
         return json.dumps({"error": str(e)})
 
 
-def getStatus():
+def getStatus(log):
+    global logger
+    logger = log
     url = "http://localhost"
     try:
         stat = requests.get(url + "/printer/objects/query?print_stats")
         stat = stat.json()  # 응답을 JSON 딕셔너리로 변환
+        logger.info(f"stat: {stat}")
         # 필요한 데이터 추출
         print_stats = stat.get("result", {}).get("status", {}).get("print_stats", {})
         status = print_stats.get("state")
