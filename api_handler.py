@@ -1,32 +1,34 @@
 import requests
 import json
 import base64
+import mqtt
 from PIL import Image
 from io import BytesIO
 
 logger = None
+url = "http://localhost"
 
 
 def main(message):
-    url = "http://localhost/"
     try:
-        # message가 문자열인 경우, 딕셔너리로 변환
-        if isinstance(message, str):
-            message = json.loads(message)
-        # message가 딕셔너리이므로 직접 접근
-        if message["method"] == "GET":
-            response = requests.get(url + message["url"])
-        # 여기서 JSON 대신 response.text를 반환
-        return response.text
+        message_dict = json.loads(message)  # 메시지 문자열을 딕셔너리로 변환
+        res = {}  # 응답을 위한 딕셔너리 초기화
+
+        if message_dict.get("method") == "CUSTOM":
+            if message_dict.get("url") == "getStatus":
+                res["message"] = (
+                    getStatus()
+                )  # getStatus 함수의 결과를 res 딕셔너리에 할당
+                res["topic"] = (
+                    mqtt.topic + "/status"
+                )  # mqtt 모듈의 topic 변수와 "/status"를 결합하여 토픽 설정
+
+        return json.dumps(res)  # JSON 문자열로 변환하여 반환
     except Exception as e:
-        logger.error(f"Failed to handle message: {e}")
         return json.dumps({"error": str(e)})
 
 
-def getStatus(log):
-    global logger
-    logger = log
-    url = "http://localhost"
+def getStatus():
     try:
         stat = requests.get(url + "/printer/objects/query?print_stats")
         stat = stat.json()  # 응답을 JSON 딕셔너리로 변환
@@ -79,5 +81,4 @@ def getStatus(log):
 
         return json.dumps(extracted_data)  # JSON 문자열로 변환하여 반환
     except Exception as e:
-        logger.error(f"Failed to get status: {e}")
         return json.dumps({"error": str(e)})

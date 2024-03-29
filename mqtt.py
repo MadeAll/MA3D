@@ -37,12 +37,12 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     logger.info(f"Received message from '{topic}': {message}")
     response = api_handler.main(message)
 
-    # 응답 토픽 정의 (예: {printerID}/res)
-    response_topic = topic.replace("/cmd", "/res")
-    logger.info(f"Publishing message to '{response_topic}': {response}")
+    logger.info(
+        "Publishing message to '{}': {}".format(response["topic"], response["message"])
+    )
     # 메시지를 {printerID}/res 토픽으로 재전송
     mqtt_connection.publish(
-        topic=response_topic, payload=response, qos=mqtt.QoS.AT_LEAST_ONCE
+        topic=response["topic"], payload=response["message"], qos=mqtt.QoS.AT_LEAST_ONCE
     )
 
 
@@ -53,7 +53,7 @@ timers = []
 def publish_status():
     global timers
     logger.info("Get Printer Status")
-    message = api_handler.getStatus(logger)
+    message = api_handler.getStatus()
     mqtt_connection.publish(
         topic=topic + "/status", payload=message, qos=mqtt.QoS.AT_LEAST_ONCE
     )

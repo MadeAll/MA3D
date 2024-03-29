@@ -10,7 +10,7 @@ def setup_logger():
         return logger
 
     logger.setLevel(logging.INFO)
-    log_dir = os.path.expanduser('~/printer_data/logs/')
+    log_dir = os.path.expanduser('/home/biqu/printer_data/logs/')
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     log_file = os.path.join(log_dir, 'ma3d.log')
