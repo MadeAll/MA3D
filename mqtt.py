@@ -3,6 +3,7 @@ from awsiot import mqtt_connection_builder
 import api_handler
 import threading
 import time
+import json
 
 # 로그 설정
 logger = None
@@ -35,7 +36,9 @@ def on_connection_resumed(connection, return_code, session_present, **kwargs):
 def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     message = payload.decode("utf-8")
     logger.info(f"Received message from '{topic}': {message}")
-    response = api_handler.main(message)
+
+    response_str = api_handler.main(message)  # 여기에서 response는 문자열
+    response = json.loads(response_str)  # 문자열을 딕셔너리로 변환
 
     logger.info(
         "Publishing message to '{}': {}".format(response["topic"], response["message"])
