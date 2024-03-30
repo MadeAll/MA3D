@@ -72,6 +72,34 @@ create_service()
     echo "[OK]"
 }
 
+add_config()
+{
+    # Define the path to the original and target MA3D.cfg files
+    ORIGINAL_CFG_FILE="./config/MA3D.cfg"
+    TARGET_CFG_PATH="/home/biqu/printer_data/config/MA3D.cfg"
+
+    # Define the ID for AWS connection
+    ID="YOUR_AWS_CONNECTION_ID"
+
+    # Copy the original MA3D.cfg file to the target directory
+    echo -n "Copying MA3D.cfg to ${TARGET_CFG_PATH}... "
+    cp "$ORIGINAL_CFG_FILE" "$TARGET_CFG_PATH"
+    echo "[OK]"
+
+    # Check if the AWS certificate file exists
+    if [ -f "./AWS/${ID}.cert.pem" ]; then
+        echo "AWS certificate file exists. Proceeding with configuration."
+
+        # Update the 'id' value in MA3D.cfg
+        echo -n "Updating 'id' value in MA3D.cfg... "
+        sed -i "s/^id:.*$/id: ${ID}/" "$TARGET_CFG_PATH"
+        echo "[OK]"
+    else
+        echo "Error: AWS certificate file does not exist. Please check the file path and try again."
+        exit 1
+    fi
+}
+
 restart_moonraker()
 {
     echo -n "Restarting Moonraker... "
@@ -83,4 +111,5 @@ restart_moonraker()
 verify_not_root
 add_updater
 create_service
+add_config
 restart_moonraker

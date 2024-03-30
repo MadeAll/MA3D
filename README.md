@@ -20,13 +20,11 @@ git clone https://oauth2:github_pat_11AW7A7DA0y6xJpb0DSUeB_CcwQExjqoJN82w8THUHxi
 
 2. **ADD AWS IoT Certs**
 
+Add Printer at web page, create device in AWS by same id
 Upload connect_device_package.zip File to MA3D/AWS
 
 ```
-cd AWS
-unzip connect_device_package.zip
-chmod +x start.sh
-./start.sh
+cd MA3D/AWS && sh ./install.sh && cd ..
 ```
 
 After AWS MQTT Connection checked, Press Ctrl+C to kill Program.
@@ -36,7 +34,6 @@ After AWS MQTT Connection checked, Press Ctrl+C to kill Program.
 Navigate to the cloned repository directory and execute the install script:
 
 ```
-cd MA3D
 sh ./install.sh
 ```
 
