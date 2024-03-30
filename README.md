@@ -24,7 +24,7 @@ Add Printer at web page, create device in AWS by same id
 Upload connect_device_package.zip File to MA3D/AWS
 
 ```
-cd MA3D/AWS && sh ./install.sh && cd ..
+cd MA3D/AWS && sh ./install.sh
 ```
 
 After AWS MQTT Connection checked, Press Ctrl+C to kill Program.
@@ -34,7 +34,7 @@ After AWS MQTT Connection checked, Press Ctrl+C to kill Program.
 Navigate to the cloned repository directory and execute the install script:
 
 ```
-sh ./install.sh
+cd .. && sh ./install.sh
 ```
 
 This script automates the setup process, including updating the Moonraker configuration and setting up a systemd service for the MA3D plugin.

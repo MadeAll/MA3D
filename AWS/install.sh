@@ -3,7 +3,7 @@
 # Ensure the script exits on any error
 set -e
 
-restart_moonraker()
+install_AWS()
 {
     echo -n "Restarting Moonraker... "
     sudo cd AWS
@@ -11,3 +11,5 @@ restart_moonraker()
     sudo chmod +x start.sh
     sudo ./start.sh
 }
+
+install_AWS

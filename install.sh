@@ -78,26 +78,28 @@ add_config()
     ORIGINAL_CFG_FILE="./config/MA3D.cfg"
     TARGET_CFG_PATH="/home/biqu/printer_data/config/MA3D.cfg"
 
-    # Define the ID for AWS connection
-    ID="YOUR_AWS_CONNECTION_ID"
+    # Find the first AWS certificate file that matches the pattern {id}.cert.pem
+    CERT_FILE=$(find "./AWS" -name "*.cert.pem" | head -n 1)
+
+    if [ -z "$CERT_FILE" ]; then
+        echo "Error: No AWS certificate file found in ./AWS"
+        exit 1
+    fi
+
+    # Extract the ID from the certificate file name
+    ID=$(basename "$CERT_FILE" .cert.pem)
+
+    echo "Using AWS Connection ID: $ID"
 
     # Copy the original MA3D.cfg file to the target directory
     echo -n "Copying MA3D.cfg to ${TARGET_CFG_PATH}... "
-    cp "$ORIGINAL_CFG_FILE" "$TARGET_CFG_PATH"
+    cp "./config/MA3D.cfg" "$TARGET_CFG_PATH"
     echo "[OK]"
 
-    # Check if the AWS certificate file exists
-    if [ -f "./AWS/${ID}.cert.pem" ]; then
-        echo "AWS certificate file exists. Proceeding with configuration."
-
-        # Update the 'id' value in MA3D.cfg
-        echo -n "Updating 'id' value in MA3D.cfg... "
-        sed -i "s/^id:.*$/id: ${ID}/" "$TARGET_CFG_PATH"
-        echo "[OK]"
-    else
-        echo "Error: AWS certificate file does not exist. Please check the file path and try again."
-        exit 1
-    fi
+    # Update the 'id' value in MA3D.cfg
+    echo -n "Updating 'id' value in MA3D.cfg with '$ID'... "
+    sed -i "s/^id:.*$/id: ${ID}/" "$TARGET_CFG_PATH"
+    echo "[OK]"
 }
 
 restart_moonraker()

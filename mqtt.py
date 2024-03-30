@@ -4,17 +4,23 @@ import api_handler
 import threading
 import time
 import json
+import configparser  # 설정 파일을 읽기 위한 모듈
+
 
 # 로그 설정
 logger = None
 
-# AWS IoT Core 설정 (환경에 맞게 수정 필요)
+# 설정 파일에서 AWS IoT Core와 관련된 설정을 읽어오기
+config = configparser.ConfigParser()
+config.read("/home/biqu/printer_data/config/MA3D.cfg")
+client_id = config.get("MA3D", "id")  # 'MA3D' 섹션 아래 'id' 항목의 값을 읽어옵니다.
+
+# AWS IoT Core 설정
 endpoint = "a2k61xlc47ga1s-ats.iot.us-east-1.amazonaws.com"
-cert = "/home/biqu/MA3D/AWS/L0Xi6p3yoBqG8XWbaGf7.cert.pem"
-key = "/home/biqu/MA3D/AWS/L0Xi6p3yoBqG8XWbaGf7.private.key"
-root_ca = "/home/biqu/MA3D/AWS/root-CA.crt"
-client_id = "L0Xi6p3yoBqG8XWbaGf7"
-topic = "L0Xi6p3yoBqG8XWbaGf7"
+cert = f"/home/biqu/MA3D/AWS/{client_id}.cert.pem"
+key = f"/home/biqu/MA3D/AWS/{client_id}.private.key"
+root_ca = f"/home/biqu/MA3D/AWS/root-CA.crt"
+topic = f"{client_id}"
 
 # 연결 객체 초기화
 mqtt_connection = None
