@@ -10,20 +10,33 @@ import configparser  # 설정 파일을 읽기 위한 모듈
 # 로그 설정
 logger = None
 
-# 설정 파일에서 AWS IoT Core와 관련된 설정을 읽어오기
-config = configparser.ConfigParser()
-config.read("/home/biqu/printer_data/config/MA3D.cfg")
-client_id = config.get("MA3D", "id")  # 'MA3D' 섹션 아래 'id' 항목의 값을 읽어옵니다.
-
-# AWS IoT Core 설정
+# AWS IoT Core 설정 (기본값, 실제 사용 전 get_ClientID 함수를 호출하여 업데이트 필요)
 endpoint = "a2k61xlc47ga1s-ats.iot.us-east-1.amazonaws.com"
-cert = f"/home/biqu/MA3D/AWS/{client_id}.cert.pem"
-key = f"/home/biqu/MA3D/AWS/{client_id}.private.key"
-root_ca = f"/home/biqu/MA3D/AWS/root-CA.crt"
-topic = f"{client_id}"
+client_id = ""
+cert = ""
+key = ""
+root_ca = ""
+topic = ""
 
 # 연결 객체 초기화
 mqtt_connection = None
+
+
+def get_ClientID():
+    global client_id, cert, key, root_ca, topic
+
+    # 설정 파일에서 AWS IoT Core와 관련된 설정을 읽어오기
+    config = configparser.ConfigParser()
+    config.read("/home/biqu/printer_data/config/MA3D.cfg")
+    client_id = config.get(
+        "MA3D", "id"
+    )  # 'MA3D' 섹션 아래 'id' 항목의 값을 읽어옵니다.
+
+    # 경로 업데이트
+    cert = f"/home/biqu/MA3D/AWS/{client_id}.cert.pem"
+    key = f"/home/biqu/MA3D/AWS/{client_id}.private.key"
+    root_ca = f"/home/biqu/MA3D/AWS/root-CA.crt"
+    topic = f"{client_id}"
 
 
 # 연결 중단 시 호출될 콜백
@@ -113,6 +126,7 @@ def setup_mqtt_connection():
 def main(log):
     global logger
     logger = log
+    get_ClientID()
     mqtt_connection = setup_mqtt_connection()
 
     # 토픽 구독
