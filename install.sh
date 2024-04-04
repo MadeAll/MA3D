@@ -55,6 +55,12 @@ add_updater()
     fi
 }
 
+install_module()
+{
+    echo -n "Install modules..."
+    sudo "pip3 install requests"
+}
+
 create_service()
 {
     # Define the path to the predefined service file

@@ -8,6 +8,31 @@ MA3D is a Klipper plugin designed to enhance the 3D printing experience for user
 
 Before installing the MA3D plugin, ensure that both Klipper and Moonraker are already installed and running on your system. This plugin requires these components to function properly.
 
+## Device Wifi Connect
+
+Make system.cfg wifi connection as SSID "@naneunguccida" PW "jimmy001224".
+Connect device to Mobile Hotspot. (WPA2 Required)
+
+Check current connection. Hotspot wifi must connected.
+```
+nmcli con show
+```
+Check Wifi list
+```
+nmcli device wifi list
+```
+Connect to new Wifi
+```
+nmcli device wifi connect "SSID" password PWD
+```
+If "New Connection activation was enqueued", it means connection is ready.
+send "sudo reboot" to enable new connection. ( Turn hotspot off )
+
+When you need change static ip
+```
+nmcli connection modify "MyWiFiConnection" ipv4.addresses "192.168.1.{num}/24" ipv4.gateway "192.168.1.1" ipv4.dns "8.8.8.8" ipv4.method "manual"
+```
+
 ## Installation
 
 To install the MA3D plugin, follow these steps:

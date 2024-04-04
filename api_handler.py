@@ -22,7 +22,18 @@ def main(message):
                 res["topic"] = (
                     mqtt.topic + "/status"
                 )  # mqtt 모듈의 topic 변수와 "/status"를 결합하여 토픽 설정
-
+            elif message_dict.get("url") == "uploadFile":
+                body = message_dict.get("body")
+                if body:
+                    download_url = body.get("url")
+                    filename = body.get("name")
+                    res["message"] = uploadFile(download_url, filename)
+                    res["topic"] = mqtt.topic + "/res"  # 응답을 위한 토픽 설정
+                else:
+                    res["message"] = json.dumps(
+                        {"error": "Missing 'body' with 'url' and 'name'"}
+                    )
+                    res["topic"] = mqtt.topic + "/res"
         return json.dumps(res)  # JSON 문자열로 변환하여 반환
     except Exception as e:
         return json.dumps({"error": str(e)})
@@ -81,4 +92,37 @@ def getStatus():
 
         return json.dumps(extracted_data)  # JSON 문자열로 변환하여 반환
     except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+def uploadFile(download_url, filename):
+    try:
+        # 파일 저장 경로 설정
+        save_path = f"/home/biqu/printer_data/gcodes/{filename}"
+
+        # Firebase Storage에서 파일 다운로드
+        response = requests.get(download_url, stream=True)
+        if response.status_code == 200:
+            # 로컬에 파일 저장
+            with open(save_path, "wb") as file:
+                for chunk in response.iter_content(chunk_size=1024):
+                    file.write(chunk)
+            # 성공 메시지 반환
+            return json.dumps(
+                {
+                    "success": True,
+                    "message": "File successfully downloaded",
+                    "filename": filename,
+                }
+            )
+        else:
+            # 다운로드 실패 시 오류 메시지 반환
+            return json.dumps(
+                {
+                    "success": False,
+                    "error": "Failed to download file from Firebase Storage",
+                }
+            )
+    except Exception as e:
+        # 예외 발생 시 오류 메시지 반환
         return json.dumps({"error": str(e)})
