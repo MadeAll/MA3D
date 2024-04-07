@@ -35,8 +35,14 @@ def main(message):
                     )
                     res["topic"] = mqtt.topic + "/res"
         elif message_dict.get("method") == "GET":
-            logger.info(f"Received GET request: {message_dict}")  # 로그 추가
+            logger.info(f"Received GET request: {message_dict}")
             res["message"] = request_GET(message_dict.get("url"))
+            res["topic"] = mqtt.topic + "/res"
+        else:
+            logger.error("Invalid method or missing information")
+            res["message"] = json.dumps(
+                {"error": "Invalid method or missing information"}
+            )
             res["topic"] = mqtt.topic + "/res"
         return json.dumps(res)  # JSON 문자열로 변환하여 반환
     except Exception as e:
