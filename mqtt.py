@@ -66,7 +66,7 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
         {
             # "url": original_message_dict.get("url"),
             "url": "test",
-            "reponse": response["message"],  # The response message from the api_handler
+            "response": response["message"],  # The response message from the api_handler
         }
     )
 
