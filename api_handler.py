@@ -21,16 +21,14 @@ def main(log, message):
                 res["message"] = (
                     getStatus()
                 )  # getStatus 함수의 결과를 res 딕셔너리에 할당
-                res["topic"] = (
-                    mqtt.topic + "/status"
-                )  # mqtt 모듈의 topic 변수와 "/status"를 결합하여 토픽 설정
+                res["topic"] = mqtt.topic + "/status"
             elif message_dict.get("url") == "uploadFile":
                 body = message_dict.get("body")
                 if body:
                     download_url = body.get("url")
                     filename = body.get("name")
                     res["message"] = uploadFile(download_url, filename)
-                    res["topic"] = mqtt.topic + "/res"  # 응답을 위한 토픽 설정
+                    res["topic"] = mqtt.topic + "/res"
                 else:
                     res["message"] = json.dumps(
                         {"error": "Missing 'body' with 'url' and 'name'"}
