@@ -18,38 +18,48 @@ def main(log, message):
 
         if message_dict.get("method") == "CUSTOM":
             if message_dict.get("url") == "getStatus":
-                res["message"] = (
-                    getStatus()
-                )  # getStatus 함수의 결과를 res 딕셔너리에 할당
+                res["message"] = {"url": "getStatus", "response": getStatus()}
                 res["topic"] = mqtt.topic + "/status"
             elif message_dict.get("url") == "uploadFile":
                 body = message_dict.get("body")
                 if body:
                     download_url = body.get("url")
                     filename = body.get("name")
-                    res["message"] = uploadFile(download_url, filename)
+                    res["message"] = {
+                        "url": "uploadFile",
+                        "response": uploadFile(download_url, filename),
+                    }
                     res["topic"] = mqtt.topic + "/res"
                 else:
-                    res["message"] = json.dumps(
-                        {"error": "Missing 'body' with 'url' and 'name'"}
-                    )
+                    res["message"] = {
+                        "url": "uploadFile",
+                        "response": json.dumps(
+                            {"error": "Missing 'body' with 'url' and 'name'"}
+                        ),
+                    }
                     res["topic"] = mqtt.topic + "/res"
         elif message_dict.get("method") == "GET":
             logger.info(f"Received GET request: {message_dict}")
-            res["message"] = request_GET(message_dict.get("url"))
+            url = message_dict.get("url")
+            res["message"] = {"url": url, "response": request_GET(url)}
             res["topic"] = mqtt.topic + "/res"
         elif message_dict.get("method") == "POST":
-            logger.info(f"Received GET request: {message_dict}")
-            res["message"] = request_POST(message_dict.get("url"))
+            logger.info(f"Received POST request: {message_dict}")
+            url = message_dict.get("url")
+            res["message"] = {"url": url, "response": request_POST(url)}
             res["topic"] = mqtt.topic + "/res"
         else:
             logger.error("Invalid method or missing information")
-            res["message"] = json.dumps(
-                {"error": "Invalid method or missing information"}
-            )
+            res["message"] = {
+                "url": message_dict.get("url"),
+                "response": json.dumps(
+                    {"error": "Invalid method or missing information"}
+                ),
+            }
             res["topic"] = mqtt.topic + "/res"
         return json.dumps(res)  # JSON 문자열로 변환하여 반환
     except Exception as e:
+        logger.error(f"An error occurred: {e}")
         return json.dumps({"error": str(e)})
 
 
