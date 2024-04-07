@@ -41,7 +41,7 @@ def main(log, message):
         elif message_dict.get("method") == "GET":
             logger.info(f"Received GET request: {message_dict}")
             url = message_dict.get("url")
-            res["message"] = request_GET(url)
+            res["message"] = {"url": url, "response": request_GET(url)}
             res["topic"] = mqtt.topic + "/res"
         elif message_dict.get("method") == "POST":
             logger.info(f"Received POST request: {message_dict}")
@@ -155,8 +155,7 @@ def uploadFile(download_url, filename):
 def request_GET(url):
     try:
         response = requests.get(localhost + url)
-        response = response.json()  # 응답을 JSON 딕셔너리로 변환
-        return json.dumps(response)  # JSON 문자열로 변환하여 반환
+        return response.json()  # 응답을 JSON 딕셔너리로 변환
     except Exception as e:
         return json.dumps({"error": str(e)})
 
@@ -164,7 +163,6 @@ def request_GET(url):
 def request_POST(url):
     try:
         response = requests.post(localhost + url)
-        response = response.json()  # 응답을 JSON 딕셔너리로 변환
-        return json.dumps(response)  # JSON 문자열로 변환하여 반환
+        return response.json()  # 응답을 JSON 딕셔너리로 변환
     except Exception as e:
         return json.dumps({"error": str(e)})
