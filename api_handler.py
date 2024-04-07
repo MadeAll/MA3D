@@ -41,7 +41,7 @@ def main(log, message):
         elif message_dict.get("method") == "GET":
             logger.info(f"Received GET request: {message_dict}")
             url = message_dict.get("url")
-            res["message"] = {"url": url, "response": request_GET(url)}
+            res["message"] = request_GET(url)
             res["topic"] = mqtt.topic + "/res"
         elif message_dict.get("method") == "POST":
             logger.info(f"Received POST request: {message_dict}")
