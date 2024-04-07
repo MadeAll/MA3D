@@ -9,7 +9,9 @@ logger = None
 localhost = "http://localhost"
 
 
-def main(message):
+def main(log, message):
+    global logger
+    logger = log
     try:
         message_dict = json.loads(message)  # 메시지 문자열을 딕셔너리로 변환
         res = {}  # 응답을 위한 딕셔너리 초기화
@@ -37,9 +39,7 @@ def main(message):
         elif message_dict.get("method") == "GET":
             logger.info(f"Received GET request: {message_dict}")
             res["message"] = request_GET(message_dict.get("url"))
-            res["topic"] = (
-                mqtt.topic + "/res"
-            )  # mqtt 모듈의 topic 변수와 "/res"를 결합하여 토픽 설정
+            res["topic"] = mqtt.topic + "/res"
         else:
             logger.error("Invalid method or missing information")
             res["message"] = json.dumps(
