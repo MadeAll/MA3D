@@ -56,15 +56,23 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     message = payload.decode("utf-8")
     logger.info(f"Received message from '{topic}': {message}")
 
+    # Extracting the original message as a dictionary
+    original_message_dict = json.loads(message)
+
     response_str = api_handler.main(logger, message)  # 여기에서 response는 문자열
     response = json.loads(response_str)  # 문자열을 딕셔너리로 변환
-
-    logger.info(
-        "Publishing message to '{}': {}".format(response["topic"], response["message"])
+    # Preparing the new payload to include the original URL and the response message
+    formatted_payload = json.dumps(
+        {
+            "url": original_message_dict.get("url"),
+            "message": response["message"],  # The response message from the api_handler
+        }
     )
-    # 메시지를 {printerID}/res 토픽으로 재전송
+
+    logger.info(f"Publishing message to '{response['topic']}': {formatted_payload}")
+    # Publish the newly formatted payload
     mqtt_connection.publish(
-        topic=response["topic"], payload=response["message"], qos=mqtt.QoS.AT_LEAST_ONCE
+        topic=response["topic"], payload=formatted_payload, qos=mqtt.QoS.AT_LEAST_ONCE
     )
 
 
@@ -153,4 +161,3 @@ def main(log):
 
 if __name__ == "__main__":
     main()
-    
