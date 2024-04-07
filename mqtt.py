@@ -64,8 +64,7 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     # Preparing the new payload to include the original URL and the response message
     formatted_payload = json.dumps(
         {
-            # "url": original_message_dict.get("url"),
-            "url": "test",
+            "url": original_message_dict.get("url"),
             "response": response["message"],  # The response message from the api_handler
         }
     )
