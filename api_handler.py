@@ -37,7 +37,9 @@ def main(message):
         elif message_dict.get("method") == "GET":
             logger.info(f"Received GET request: {message_dict}")
             res["message"] = request_GET(message_dict.get("url"))
-            res["topic"] = mqtt.topic + "/res"
+            res["topic"] = (
+                mqtt.topic + "/res"
+            )  # mqtt 모듈의 topic 변수와 "/res"를 결합하여 토픽 설정
         else:
             logger.error("Invalid method or missing information")
             res["message"] = json.dumps(
