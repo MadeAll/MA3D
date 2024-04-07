@@ -6,7 +6,7 @@ from PIL import Image
 from io import BytesIO
 
 logger = None
-url = "http://localhost"
+localhost = "http://localhost"
 
 
 def main(message):
@@ -34,6 +34,9 @@ def main(message):
                         {"error": "Missing 'body' with 'url' and 'name'"}
                     )
                     res["topic"] = mqtt.topic + "/res"
+        elif message_dict.get("method") == "GET":
+            res["message"] = request_GET(message_dict.get("url"))
+            res["topic"] = mqtt.topic + "/res"
         return json.dumps(res)  # JSON 문자열로 변환하여 반환
     except Exception as e:
         return json.dumps({"error": str(e)})
@@ -41,7 +44,7 @@ def main(message):
 
 def getStatus():
     try:
-        stat = requests.get(url + "/printer/objects/query?print_stats")
+        stat = requests.get(localhost + "/printer/objects/query?print_stats")
         stat = stat.json()  # 응답을 JSON 딕셔너리로 변환
         # 필요한 데이터 추출
         print_stats = stat.get("result", {}).get("status", {}).get("print_stats", {})
@@ -49,7 +52,7 @@ def getStatus():
         filename = print_stats.get("filename")
         print_duration = print_stats.get("print_duration")
 
-        temp = requests.get(url + "/api/printer")
+        temp = requests.get(localhost + "/api/printer")
         temp = temp.json()  # 응답을 JSON 딕셔너리로 변환
         # 필요한 데이터 추출
         temp_stats = temp.get("temperature", {})
@@ -58,14 +61,14 @@ def getStatus():
         bed_temp = temp_stats.get("bed").get("actual")
         bed_target = temp_stats.get("bed").get("target")
 
-        print = requests.get(url + "/server/files/metadata?filename=" + filename)
+        print = requests.get(localhost + "/server/files/metadata?filename=" + filename)
         print = print.json()  # 응답을 JSON 딕셔너리로 변환
         # 필요한 데이터 추출
         file_stats = print.get("result", {})
         estimated_time = file_stats.get("estimated_time")
 
         # 스냅샷 이미지 가져오기 및 처리
-        snapshot_response = requests.get(url + "/webcam/?action=snapshot")
+        snapshot_response = requests.get(localhost + "/webcam/?action=snapshot")
         if snapshot_response.status_code == 200:
             img = Image.open(BytesIO(snapshot_response.content))
             img_resized = img.resize(
@@ -125,4 +128,13 @@ def uploadFile(download_url, filename):
             )
     except Exception as e:
         # 예외 발생 시 오류 메시지 반환
+        return json.dumps({"error": str(e)})
+
+
+def request_GET(url):
+    try:
+        response = requests.get(localhost + url)
+        response = response.json()  # 응답을 JSON 딕셔너리로 변환
+        return json.dumps(response)  # JSON 문자열로 변환하여 반환
+    except Exception as e:
         return json.dumps({"error": str(e)})

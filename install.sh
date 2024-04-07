@@ -118,6 +118,7 @@ restart_moonraker()
 # Run steps
 verify_not_root
 add_updater
+install_module
 create_service
 add_config
 restart_moonraker
