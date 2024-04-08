@@ -78,7 +78,7 @@ def getStatus():
 
         klippy_stat = requests.get(localhost + "/server/info")
         klippy_stat = klippy_stat.json()
-        if klippy_stat.get("result, {}").get("klippy_state", {}) == "shutdown":
+        if klippy_stat.get("result", {}).get("klippy_state", {}) == "shutdown":
             status = "Shutdown"
 
         temp = requests.get(localhost + "/api/printer")
