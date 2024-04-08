@@ -163,6 +163,6 @@ def request_POST(url):
     try:
         response = requests.post(localhost + url)
         response = response.json()  # 응답을 JSON 딕셔너리로 변환
-        return json.dumps(response)  # JSON 문자열로 변환하여 반환
+        return json.dumps(response["result"])  # JSON 문자열로 변환하여 반환
     except Exception as e:
         return json.dumps({"error": str(e)})
