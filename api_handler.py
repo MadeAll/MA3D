@@ -67,6 +67,7 @@ def main(log, topic, message):
 
 def getStatus():
     try:
+
         stat = requests.get(localhost + "/printer/objects/query?print_stats")
         stat = stat.json()  # 응답을 JSON 딕셔너리로 변환
         # 필요한 데이터 추출
@@ -74,6 +75,11 @@ def getStatus():
         status = print_stats.get("state")
         filename = print_stats.get("filename")
         print_duration = print_stats.get("print_duration")
+
+        klippy_stat = requests.get(localhost + "/server/info")
+        klippy_stat = klippy_stat.json()
+        if klippy_stat.get("result, {}").get("klippy_state", {}) == "shutdown":
+            status = "Shutdown"
 
         temp = requests.get(localhost + "/api/printer")
         temp = temp.json()  # 응답을 JSON 딕셔너리로 변환
