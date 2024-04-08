@@ -62,16 +62,16 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     response_str = api_handler.main(
         logger, topic, message
     )  # 여기에서 response는 문자열
-    response = json.loads(response_str)  # 문자열을 딕셔너리로 변환
+    # response = json.loads(response_str)  # 문자열을 딕셔너리로 변환
     # Preparing the new payload to include the original URL and the response message
-    formatted_payload = json.dumps(response["message"])
+    # formatted_payload = json.dumps(response["message"])
 
     response_topic = topic.replace("/req/", "/res/")
 
-    logger.info(f"Publishing message to '{response_topic}': {formatted_payload}")
+    logger.info(f"Publishing message to '{response_topic}': {response_str}")
     # Publish the newly formatted payload
     mqtt_connection.publish(
-        topic=response_topic, payload=formatted_payload, qos=mqtt.QoS.AT_LEAST_ONCE
+        topic=response_topic, payload=response_str, qos=mqtt.QoS.AT_LEAST_ONCE
     )
 
 
