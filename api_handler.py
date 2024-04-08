@@ -36,30 +36,14 @@ def main(log, topic, message):
                 res["message"] = request_GET(path)
             else:
                 logger.warning("No path found after /GET in topic")
-
-        # if message_dict.get("method") == "CUSTOM":
-        #     if message_dict.get("url") == "uploadFile":
-        #         body = message_dict.get("body")
-        #         if body:
-        #             download_url = body.get("url")
-        #             filename = body.get("name")
-        #             res["message"] = uploadFile(download_url, filename)
-        #             res["topic"] = mqtt.topic + "/res"
-        #         else:
-        #             res["message"] = json.dumps(
-        #                 {"error": "Missing 'body' with 'url' and 'name'"}
-        #             )
-        #             res["topic"] = mqtt.topic + "/res"
-        # elif message_dict.get("method") == "GET":
-        #     logger.info(f"Received GET request: {message_dict}")
-        #     res["message"] = request_GET(message_dict.get("url"))
-        #     res["topic"] = mqtt.topic + "/res"
-        # else:
-        #     logger.error("Invalid method or missing information")
-        #     res["message"] = json.dumps(
-        #         {"error": "Invalid method or missing information"}
-        #     )
-        #     res["topic"] = mqtt.topic + "/res"
+        elif "/DELETE" in topic:
+            parts = topic.split("/DELETE")
+            if len(parts) > 1:
+                path = parts[1]
+                logger.debug(f"Calling request_DELETE with path: {path}")
+                res["message"] = request_DELETE(path)
+            else:
+                logger.warning("No path found after /DELETE in topic")
         return json.dumps(res)  # JSON 문자열로 변환하여 반환
     except Exception as e:
         return json.dumps({"error": str(e)})
@@ -176,7 +160,8 @@ def request_POST(url):
         return json.dumps(response["result"])  # JSON 문자열로 변환하여 반환
     except Exception as e:
         return json.dumps({"error": str(e)})
-    
+
+
 def request_DELETE(url):
     try:
         response = requests.DELETE(localhost + url)
