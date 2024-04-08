@@ -22,9 +22,9 @@ def main(log, topic, message):
                 res["message"] = getStatus()
         elif "/POST" in topic:
             if "/machine/update/refresh?name=ma3d" in topic:
-                res["message"] = request_POST(
-                    message_dict.get("/machine/update/refresh?name=ma3d")
-                )
+                res["message"] = request_POST("/machine/update/refresh?name=ma3d")
+            elif "/machine/update/client?name=ma3d" in topic:
+                res["message"] = request_POST("/machine/update/client?name=ma3d")
 
         # if message_dict.get("method") == "CUSTOM":
         #     if message_dict.get("url") == "getStatus":
