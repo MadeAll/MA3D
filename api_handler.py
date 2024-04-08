@@ -21,6 +21,7 @@ def main(log, topic, message):
             if "/getStatus" in topic:
                 res["message"] = getStatus()
         elif "/POST" in topic:
+            logger.info(f"url: {topic.split("/POST")[1]}")
             res["message"] = request_POST(topic.split("/POST")[1])
         elif "/GET" in topic:
             res["message"] = request_GET(topic.split("/GET")[1])
