@@ -22,36 +22,36 @@ def main(log, topic, message):
                 res["message"] = getStatus()
                 res["topic"] = mqtt.topic + "/status"
 
-        if message_dict.get("method") == "CUSTOM":
-            if message_dict.get("url") == "getStatus":
-                res["message"] = getStatus()
-                res["topic"] = mqtt.topic + "/status"
-            elif message_dict.get("url") == "uploadFile":
-                body = message_dict.get("body")
-                if body:
-                    download_url = body.get("url")
-                    filename = body.get("name")
-                    res["message"] = uploadFile(download_url, filename)
-                    res["topic"] = mqtt.topic + "/res"
-                else:
-                    res["message"] = json.dumps(
-                        {"error": "Missing 'body' with 'url' and 'name'"}
-                    )
-                    res["topic"] = mqtt.topic + "/res"
-        elif message_dict.get("method") == "GET":
-            logger.info(f"Received GET request: {message_dict}")
-            res["message"] = request_GET(message_dict.get("url"))
-            res["topic"] = mqtt.topic + "/res"
-        elif message_dict.get("method") == "POST":
-            logger.info(f"Received GET request: {message_dict}")
-            res["message"] = request_POST(message_dict.get("url"))
-            res["topic"] = mqtt.topic + "/res"
-        else:
-            logger.error("Invalid method or missing information")
-            res["message"] = json.dumps(
-                {"error": "Invalid method or missing information"}
-            )
-            res["topic"] = mqtt.topic + "/res"
+        # if message_dict.get("method") == "CUSTOM":
+        #     if message_dict.get("url") == "getStatus":
+        #         res["message"] = getStatus()
+        #         res["topic"] = mqtt.topic + "/status"
+        #     elif message_dict.get("url") == "uploadFile":
+        #         body = message_dict.get("body")
+        #         if body:
+        #             download_url = body.get("url")
+        #             filename = body.get("name")
+        #             res["message"] = uploadFile(download_url, filename)
+        #             res["topic"] = mqtt.topic + "/res"
+        #         else:
+        #             res["message"] = json.dumps(
+        #                 {"error": "Missing 'body' with 'url' and 'name'"}
+        #             )
+        #             res["topic"] = mqtt.topic + "/res"
+        # elif message_dict.get("method") == "GET":
+        #     logger.info(f"Received GET request: {message_dict}")
+        #     res["message"] = request_GET(message_dict.get("url"))
+        #     res["topic"] = mqtt.topic + "/res"
+        # elif message_dict.get("method") == "POST":
+        #     logger.info(f"Received GET request: {message_dict}")
+        #     res["message"] = request_POST(message_dict.get("url"))
+        #     res["topic"] = mqtt.topic + "/res"
+        # else:
+        #     logger.error("Invalid method or missing information")
+        #     res["message"] = json.dumps(
+        #         {"error": "Invalid method or missing information"}
+        #     )
+        #     res["topic"] = mqtt.topic + "/res"
         return json.dumps(res)  # JSON 문자열로 변환하여 반환
     except Exception as e:
         return json.dumps({"error": str(e)})
