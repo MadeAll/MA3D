@@ -21,16 +21,12 @@ def main(log, topic, message):
             if "/getStatus" in topic:
                 res["message"] = getStatus()
         elif "/POST" in topic:
-            if "/machine/update/refresh?name=ma3d" in topic:
-                res["message"] = request_POST("/machine/update/refresh?name=ma3d")
-            elif "/machine/update/client?name=ma3d" in topic:
-                res["message"] = request_POST("/machine/update/client?name=ma3d")
+            res["message"] = request_POST(topic.split("/POST")[1])
+        elif "/GET" in topic:
+            res["message"] = request_GET(topic.split("/GET")[1])
 
         # if message_dict.get("method") == "CUSTOM":
-        #     if message_dict.get("url") == "getStatus":
-        #         res["message"] = getStatus()
-        #         res["topic"] = mqtt.topic + "/status"
-        #     elif message_dict.get("url") == "uploadFile":
+        #     if message_dict.get("url") == "uploadFile":
         #         body = message_dict.get("body")
         #         if body:
         #             download_url = body.get("url")
@@ -45,10 +41,6 @@ def main(log, topic, message):
         # elif message_dict.get("method") == "GET":
         #     logger.info(f"Received GET request: {message_dict}")
         #     res["message"] = request_GET(message_dict.get("url"))
-        #     res["topic"] = mqtt.topic + "/res"
-        # elif message_dict.get("method") == "POST":
-        #     logger.info(f"Received GET request: {message_dict}")
-        #     res["message"] = request_POST(message_dict.get("url"))
         #     res["topic"] = mqtt.topic + "/res"
         # else:
         #     logger.error("Invalid method or missing information")
