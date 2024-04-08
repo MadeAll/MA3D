@@ -136,7 +136,7 @@ def main(log):
     subscribe_future.result()  # 구독 완료까지 대기
     logger.info(f"Subscribed to '{topic}/req/#'")
 
-    publish_status()
+    # publish_status()
 
     # 연결 종료 처리 예시 (필요에 따라 적절한 종료 조건 추가)
     try:
