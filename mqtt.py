@@ -59,20 +59,19 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     # Extracting the original message as a dictionary
     original_message_dict = json.loads(message)
 
-    response_str = api_handler.main(logger, message)  # 여기에서 response는 문자열
+    response_str = api_handler.main(
+        logger, topic, message
+    )  # 여기에서 response는 문자열
     response = json.loads(response_str)  # 문자열을 딕셔너리로 변환
     # Preparing the new payload to include the original URL and the response message
-    formatted_payload = json.dumps(
-        {
-            "url": original_message_dict.get("url"),
-            "response": response["message"],  # The response message from the api_handler
-        }
-    )
+    formatted_payload = json.dumps(response["message"])
 
-    logger.info(f"Publishing message to '{response['topic']}': {formatted_payload}")
+    response_topic = topic.replace("/req/", "/res/")
+
+    logger.info(f"Publishing message to '{response_topic}': {formatted_payload}")
     # Publish the newly formatted payload
     mqtt_connection.publish(
-        topic=response["topic"], payload=formatted_payload, qos=mqtt.QoS.AT_LEAST_ONCE
+        topic=response_topic, payload=formatted_payload, qos=mqtt.QoS.AT_LEAST_ONCE
     )
 
 
@@ -138,12 +137,12 @@ def main(log):
     mqtt_connection = setup_mqtt_connection()
 
     # 토픽 구독
-    logger.info(f"Subscribing to topic '{topic}/req' ...")
+    logger.info(f"Subscribing to topic '{topic}/req/#' ...")
     subscribe_future, packet_id = mqtt_connection.subscribe(
-        topic=topic + "/req", qos=mqtt.QoS.AT_LEAST_ONCE, callback=on_message_received
+        topic=topic + "/req/#", qos=mqtt.QoS.AT_LEAST_ONCE, callback=on_message_received
     )
     subscribe_future.result()  # 구독 완료까지 대기
-    logger.info(f"Subscribed to '{topic}/req'")
+    logger.info(f"Subscribed to '{topic}/req/#'")
 
     publish_status()
 

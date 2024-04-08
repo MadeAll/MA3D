@@ -13,18 +13,27 @@ Before installing the MA3D plugin, ensure that both Klipper and Moonraker are al
 Make system.cfg wifi connection as SSID "@naneunguccida" PW "jimmy001224".
 Connect device to Mobile Hotspot. (WPA2 Required)
 
+Set wifi priority to High value
+```
+nmcli con modify @naneunguccida connection.autoconnect-priority 10
+nmcli con show @naneunguccida | grep autoconnect-priority
+```
+
 Check current connection. Hotspot wifi must connected.
 ```
 nmcli con show
 ```
+
 Check Wifi list
 ```
 nmcli device wifi list
 ```
+
 Connect to new Wifi
 ```
 nmcli device wifi connect "SSID" password PWD
 ```
+
 If "New Connection activation was enqueued", it means connection is ready.
 send "sudo reboot" to enable new connection. ( Turn hotspot off )
 
