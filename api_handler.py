@@ -79,7 +79,7 @@ def getStatus():
         klippy_stat = requests.get(localhost + "/server/info")
         klippy_stat = klippy_stat.json()
         if klippy_stat.get("result", {}).get("klippy_state", {}) == "shutdown":
-            status = "Shutdown"
+            status = "shutdown"
 
         temp = requests.get(localhost + "/api/printer")
         temp = temp.json()  # 응답을 JSON 딕셔너리로 변환
