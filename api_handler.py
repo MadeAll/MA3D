@@ -21,10 +21,21 @@ def main(log, topic, message):
             if "/getStatus" in topic:
                 res["message"] = getStatus()
         elif "/POST" in topic:
-            logger.info(f"url: {topic.split("/POST")[1]}")
-            res["message"] = request_POST(topic.split("/POST")[1])
+            parts = topic.split("/POST")
+            if len(parts) > 1:
+                path = parts[1]
+                logger.debug(f"Calling request_POST with path: {path}")
+                res["message"] = request_POST(path)
+            else:
+                logger.warning("No path found after /POST in topic")
         elif "/GET" in topic:
-            res["message"] = request_GET(topic.split("/GET")[1])
+            parts = topic.split("/GET")
+            if len(parts) > 1:
+                path = parts[1]
+                logger.debug(f"Calling request_GET with path: {path}")
+                res["message"] = request_GET(path)
+            else:
+                logger.warning("No path found after /GET in topic")
 
         # if message_dict.get("method") == "CUSTOM":
         #     if message_dict.get("url") == "uploadFile":
