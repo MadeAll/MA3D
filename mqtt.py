@@ -56,47 +56,39 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     message = payload.decode("utf-8")
     logger.info(f"Received message from '{topic}': {message}")
 
-    # Extracting the original message as a dictionary
-    original_message_dict = json.loads(message)
-
-    response_str = api_handler.main(
+    response = api_handler.main(
         logger, topic, message
-    )  # 여기에서 response는 문자열
-    # response = json.loads(response_str)  # 문자열을 딕셔너리로 변환
-    # Preparing the new payload to include the original URL and the response message
-    # formatted_payload = json.dumps(response["message"])
-
+    ) 
     response_topic = topic.replace("/req/", "/res/")
-
-    logger.info(f"Publishing message to '{response_topic}': {response_str}")
-    # Publish the newly formatted payload
+    
+    logger.info(f"Publishing message to '{response_topic}': {response}")
     mqtt_connection.publish(
-        topic=response_topic, payload=response_str, qos=mqtt.QoS.AT_LEAST_ONCE
+        topic=response_topic, payload=response, qos=mqtt.QoS.AT_LEAST_ONCE
     )
 
 
 # 타이머를 저장할 전역 변수
-timers = []
+# timers = []
 
 
-def publish_status():
-    global timers
-    logger.info("Get Printer Status")
-    message = api_handler.getStatus()
-    mqtt_connection.publish(
-        topic=topic + "/status", payload=message, qos=mqtt.QoS.AT_LEAST_ONCE
-    )
+# def publish_status():
+#     global timers
+#     logger.info("Get Printer Status")
+#     message = api_handler.getStatus()
+#     mqtt_connection.publish(
+#         topic=topic + "res/CUSTOM/getStatus", payload=message, qos=mqtt.QoS.AT_LEAST_ONCE
+#     )
 
-    # 이전 타이머가 있으면 취소
-    if timers:
-        for timer in timers:
-            timer.cancel()
-        timers.clear()
+#     # 이전 타이머가 있으면 취소
+#     if timers:
+#         for timer in timers:
+#             timer.cancel()
+#         timers.clear()
 
-    # 새 타이머 생성 및 시작
-    timer = threading.Timer(30.0, publish_status)
-    timer.start()
-    timers.append(timer)
+#     # 새 타이머 생성 및 시작
+#     timer = threading.Timer(30.0, publish_status)
+#     timer.start()
+#     timers.append(timer)
 
 
 # 프로그램 종료 시 호출될 함수

@@ -17,10 +17,14 @@ def main(log, topic, message):
         res = {}  # 응답을 위한 딕셔너리 초기화
 
         # topic 기준으로 명령어를 정리해서 보냄. 이 내용으로 아래 코드를 수정해야함.
-        if "/CUSTOM/" in topic:
-            if "getStatus" in topic:
+        if "/CUSTOM" in topic:
+            if "/getStatus" in topic:
                 res["message"] = getStatus()
-                res["topic"] = mqtt.topic + "/status"
+        elif "/POST" in topic:
+            if "/machine/update/refresh?name=ma3d" in topic:
+                res["message"] = request_POST(
+                    message_dict.get("/machine/update/refresh?name=ma3d")
+                )
 
         # if message_dict.get("method") == "CUSTOM":
         #     if message_dict.get("url") == "getStatus":
