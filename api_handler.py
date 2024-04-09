@@ -21,7 +21,7 @@ def main(log, topic, message):
             if "/getStatus" in topic:
                 res["message"] = getStatus()
             if "/uploadFile" in topic:
-                res["message"] = uploadFile(topic.split("url=")[1])
+                res["message"] = uploadFile(message_dict.get["url"])
         elif "/POST" in topic:
             parts = topic.split("/POST")
             if len(parts) > 1:
