@@ -21,7 +21,9 @@ def main(log, topic, message):
             if "/getStatus" in topic:
                 res["message"] = getStatus()
             if "/uploadFile" in topic:
-                res["message"] = uploadFile(message_dict.get["url"])
+                res["message"] = uploadFile(
+                    message_dict.get["filename"], message_dict.get["url"]
+                )
         elif "/POST" in topic:
             parts = topic.split("/POST")
             if len(parts) > 1:
@@ -113,9 +115,8 @@ def getStatus():
         return json.dumps({"error": str(e)})
 
 
-def uploadFile(download_url):
+def uploadFile(filename, download_url):
     try:
-        filename = download_url.split("/")[-1].split("?")[0]
         # 파일 저장 경로 설정
         save_path = f"/home/biqu/printer_data/gcodes/{filename}"
 
