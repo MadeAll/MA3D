@@ -22,7 +22,7 @@ def main(log, topic, message):
                 res["message"] = getStatus()
             if "/uploadFile" in topic:
                 res["message"] = uploadFile(
-                    message_dict.get["filename"], message_dict.get["url"]
+                    message_dict.get("filename"), message_dict.get("url")
                 )
         elif "/POST" in topic:
             parts = topic.split("/POST")
