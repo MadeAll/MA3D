@@ -20,6 +20,8 @@ def main(log, topic, message):
         if "/CUSTOM" in topic:
             if "/getStatus" in topic:
                 res["message"] = getStatus()
+            if "/uploadFile" in topic:
+                res["message"] = uploadFile(topic.split("url=")[1])
         elif "/POST" in topic:
             parts = topic.split("/POST")
             if len(parts) > 1:
@@ -111,8 +113,9 @@ def getStatus():
         return json.dumps({"error": str(e)})
 
 
-def uploadFile(download_url, filename):
+def uploadFile(download_url):
     try:
+        filename = download_url.split("/")[-1].split("?")[0]
         # 파일 저장 경로 설정
         save_path = f"/home/biqu/printer_data/gcodes/{filename}"
 
@@ -124,21 +127,10 @@ def uploadFile(download_url, filename):
                 for chunk in response.iter_content(chunk_size=1024):
                     file.write(chunk)
             # 성공 메시지 반환
-            return json.dumps(
-                {
-                    "success": True,
-                    "message": "File successfully downloaded",
-                    "filename": filename,
-                }
-            )
+            return json.dumps({"message": "File successfully downloaded"})
         else:
             # 다운로드 실패 시 오류 메시지 반환
-            return json.dumps(
-                {
-                    "success": False,
-                    "error": "Failed to download file from Firebase Storage",
-                }
-            )
+            return json.dumps({"error": "Failed to download file"})
     except Exception as e:
         # 예외 발생 시 오류 메시지 반환
         return json.dumps({"error": str(e)})
