@@ -267,10 +267,11 @@ def request_webRTC(url, message, mqtt_connection):
                             "candidate": event.candidate.candidate,
                             "sdpMid": event.candidate.sdpMid,
                             "sdpMLineIndex": event.candidate.sdpMLineIndex,
+                            "id": data["id"]
                         }
                     )
                     mqtt_connection.publish(
-                        topic=f"{data['id']}/req/webrtc/candidate",
+                        topic=f"{data['id']}/res/webrtc/candidate",
                         payload=candidate_message,
                         qos=mqtt.QoS.AT_LEAST_ONCE,
                     )
