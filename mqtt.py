@@ -56,47 +56,14 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     message = payload.decode("utf-8")
     logger.info(f"Received message from '{topic}': {message}")
 
-    response = api_handler.main(
-        logger, topic, message
-    ) 
-    response_topic = topic.replace("/req/", "/res/")
-    
-    logger.info(f"Publishing message to '{response_topic}': {response}")
-    mqtt_connection.publish(
-        topic=response_topic, payload=response, qos=mqtt.QoS.AT_LEAST_ONCE
-    )
+    response = api_handler.main(logger, topic, message, mqtt_connection)
+    if response:
+        response_topic = topic.replace("/req/", "/res/")
 
-
-# 타이머를 저장할 전역 변수
-# timers = []
-
-
-# def publish_status():
-#     global timers
-#     logger.info("Get Printer Status")
-#     message = api_handler.getStatus()
-#     mqtt_connection.publish(
-#         topic=topic + "res/CUSTOM/getStatus", payload=message, qos=mqtt.QoS.AT_LEAST_ONCE
-#     )
-
-#     # 이전 타이머가 있으면 취소
-#     if timers:
-#         for timer in timers:
-#             timer.cancel()
-#         timers.clear()
-
-#     # 새 타이머 생성 및 시작
-#     timer = threading.Timer(30.0, publish_status)
-#     timer.start()
-#     timers.append(timer)
-
-
-# 프로그램 종료 시 호출될 함수
-def cleanup():
-    global timers
-    for timer in timers:
-        timer.cancel()
-    logger.info("Cleaned up timers.")
+        logger.info(f"Publishing message to '{response_topic}': {response}")
+        mqtt_connection.publish(
+            topic=response_topic, payload=response, qos=mqtt.QoS.AT_LEAST_ONCE
+        )
 
 
 def setup_mqtt_connection():
@@ -136,8 +103,6 @@ def main(log):
     subscribe_future.result()  # 구독 완료까지 대기
     logger.info(f"Subscribed to '{topic}/req/#'")
 
-    # publish_status()
-
     # 연결 종료 처리 예시 (필요에 따라 적절한 종료 조건 추가)
     try:
         while True:
@@ -146,7 +111,6 @@ def main(log):
         logger.info("Disconnecting from MQTT broker...")
         disconnect_future = mqtt_connection.disconnect()
         disconnect_future.result()
-        cleanup()
         logger.info("Disconnected")
 
 

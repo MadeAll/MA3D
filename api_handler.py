@@ -1,15 +1,18 @@
 import requests
 import json
 import base64
-import mqtt
 from PIL import Image
 from io import BytesIO
+import asyncio
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
+from aiortc.contrib.media import MediaStreamTrack
 
 logger = None
 localhost = "http://localhost"
+pcs = {}
 
 
-def main(log, topic, message):
+def main(log, topic, message, mqtt_connection):
     global logger
     logger = log
     try:
@@ -48,6 +51,15 @@ def main(log, topic, message):
                 res["message"] = request_DELETE(path)
             else:
                 logger.warning("No path found after /DELETE in topic")
+        elif "/webrtc" in topic:
+            parts = topic.split("/webrtc")
+            if len(parts) > 1:
+                path = parts[1]
+                logger.debug(f"Calling request_webRTC with path: {path}")
+                res["message"] = request_webRTC(path, message_dict, mqtt_connection)
+            else:
+                logger.warning("No path found after /webrtc in topic")
+
         return json.dumps(res)  # JSON 문자열로 변환하여 반환
     except Exception as e:
         return json.dumps({"error": str(e)})
@@ -160,5 +172,129 @@ def request_DELETE(url):
         response = requests.delete(localhost + url)
         response = response.json()  # 응답을 JSON 딕셔너리로 변환
         return json.dumps(response["result"])  # JSON 문자열로 변환하여 반환
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+class WebcamStreamTrack(MediaStreamTrack):
+    kind = "video"
+
+    def __init__(self):
+        super().__init__()
+        self.player = MediaPlayer("/dev/video0")
+
+    async def recv(self):
+        frame = await self.player.video.recv()
+        return frame
+
+
+async def handle_offer(logger, pc, offer):
+    await pc.setRemoteDescription(offer)
+    stream = WebcamStreamTrack()
+    pc.addTrack(stream)
+    answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+    return pc.localDescription
+
+
+def request_webRTC(url, message, mqtt_connection):
+    try:
+        if url == "/setup":
+            data = message
+            response = None
+
+            logger.info("Handling WebRTC setup")
+            offer = RTCSessionDescription(sdp=data["sdp"], type=data["type"])
+            # 새로운 RTCPeerConnection 객체 생성
+            pc = RTCPeerConnection()
+            pcs[data["id"]] = pc
+
+            @pc.on("icecandidate")
+            def on_icecandidate(event):
+                if event.candidate:
+                    candidate_message = json.dumps(
+                        {
+                            "candidate": event.candidate.candidate,
+                            "sdpMid": event.candidate.sdpMid,
+                            "sdpMLineIndex": event.candidate.sdpMLineIndex,
+                        }
+                    )
+                    mqtt_connection.publish(
+                        topic=f"{data['id']}/req/webrtc/candidate",
+                        payload=candidate_message,
+                        qos=mqtt.QoS.AT_LEAST_ONCE,
+                    )
+
+            @pc.on("track")
+            def on_track(event):
+                logger.info("Track received")
+
+            loop = asyncio.get_event_loop()
+            answer = loop.run_until_complete(handle_offer(logger, pc, offer))
+            response = json.dumps({"sdp": answer.sdp, "type": answer.type})
+
+            return response  # JSON 문자열로 변환하여 반환
+        elif url == "/candidate":
+            logger.info("Handling ICE candidate")
+            pc = pcs.get(message["id"])
+            if pc:
+                candidate = RTCIceCandidate(
+                    candidate=message["candidate"],
+                    sdpMid=message["sdpMid"],
+                    sdpMLineIndex=message["sdpMLineIndex"],
+                )
+                loop = asyncio.get_event_loop()
+                loop.run_until_complete(pc.addIceCandidate(candidate))
+
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+    try:
+        if url == "/setup":
+            data = message
+            response = None
+
+            logger.info("Handling WebRTC setup")
+            offer = RTCSessionDescription(sdp=data["sdp"], type=data["type"])
+            # 새로운 RTCPeerConnection 객체 생성
+            pc = RTCPeerConnection()
+            pcs[data["id"]] = pc
+
+            @pc.on("icecandidate")
+            def on_icecandidate(event):
+                if event.candidate:
+                    candidate_message = json.dumps(
+                        {
+                            "candidate": event.candidate.candidate,
+                            "sdpMid": event.candidate.sdpMid,
+                            "sdpMLineIndex": event.candidate.sdpMLineIndex,
+                        }
+                    )
+                    mqtt_connection.publish(
+                        topic=f"{data['id']}/req/webrtc/candidate",
+                        payload=candidate_message,
+                        qos=mqtt.QoS.AT_LEAST_ONCE,
+                    )
+
+            @pc.on("track")
+            def on_track(event):
+                logger.info("Track received")
+
+            loop = asyncio.get_event_loop()
+            answer = loop.run_until_complete(handle_offer(logger, pc, offer))
+            response = json.dumps({"sdp": answer.sdp, "type": answer.type})
+
+            return response  # JSON 문자열로 변환하여 반환
+        elif url == "/candidate":
+            logger.info("Handling ICE candidate")
+            pc = pcs.get(message["id"])
+            if pc:
+                candidate = RTCIceCandidate(
+                    candidate=message["candidate"],
+                    sdpMid=message["sdpMid"],
+                    sdpMLineIndex=message["sdpMLineIndex"],
+                )
+                loop = asyncio.get_event_loop()
+                loop.run_until_complete(pc.addIceCandidate(candidate))
+
     except Exception as e:
         return json.dumps({"error": str(e)})
