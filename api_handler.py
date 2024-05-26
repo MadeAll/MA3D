@@ -77,7 +77,7 @@ def getStatus():
 
         klippy_stat = requests.get(localhost + "/server/info")
         klippy_stat = klippy_stat.json()
-        if klippy_stat.get("result", {}).get("klippy_state", {}) == "shutdown":
+        if (klippy_stat.get("result", {}).get("klippy_state", {}) == "shutdown"):
             status = "shutdown"
 
         temp = requests.get(localhost + "/api/printer")
@@ -271,8 +271,14 @@ def request_webRTC(url, message):
             offer = RTCSessionDescription(sdp=data["sdp"], type=data["type"])
             logger.info("Created RTCSessionDescription: %s", offer)
 
-            pc = RTCPeerConnection()
-            logger.info("Created RTCPeerConnection")
+            stun_servers = [
+                {"urls": "stun:stun.l.google.com:19302"},
+                {"urls": "stun:stun1.l.google.com:19302"},
+                {"urls": "stun:stun2.l.google.com:19302"}
+            ]
+
+            pc = RTCPeerConnection(configuration={"iceServers": stun_servers})
+            logger.info("Created RTCPeerConnection with STUN servers")
 
             @pc.on("icecandidate")
             def on_icecandidate(event):
