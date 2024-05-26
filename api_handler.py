@@ -196,7 +196,7 @@ async def handle_offer(logger, pc, offer):
     return pc.localDescription
 
 
-def request_webRTC(url, message):
+def request_webRTC(url, message, mqtt_connection):
     try:
         logger.info("request_webRTC called with url: %s and message: %s", url, message)
 
@@ -229,8 +229,10 @@ def request_webRTC(url, message):
             def on_track(event):
                 logger.info("Track received: %s", event)
 
-            loop = asyncio.get_event_loop()
-            logger.info("Event loop obtained")
+            # 명시적으로 이벤트 루프 생성 및 설정
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            logger.info("Event loop created and set")
             answer = loop.run_until_complete(handle_offer(logger, pc, offer))
             logger.info("Created answer: %s", answer)
 
@@ -251,8 +253,10 @@ def request_webRTC(url, message):
             )
             logger.info("Created RTCIceCandidate: %s", candidate)
 
-            loop = asyncio.get_event_loop()
-            logger.info("Event loop obtained")
+            # 명시적으로 이벤트 루프 생성 및 설정
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            logger.info("Event loop created and set")
             loop.run_until_complete(pc.addIceCandidate(candidate))
             logger.info("Added ICE candidate to pc")
 
