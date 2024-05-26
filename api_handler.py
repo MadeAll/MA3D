@@ -181,12 +181,21 @@ class WebcamStreamTrack(MediaStreamTrack):
     def __init__(self):
         super().__init__()
         self.player = MediaPlayer("http://localhost/webcam/?action=stream")
-        logger.info("MediaPlayer created with source: http://localhost/webcam/?action=stream")
+        logger.info(
+            "MediaPlayer created with source: http://localhost/webcam/?action=stream"
+        )
 
     async def recv(self):
-        frame = await self.player.video.recv()
-        logger.info("Frame received: %s", frame)
-        return frame
+        try:
+            frame = await self.player.video.recv()
+            if frame is None:
+                logger.error("Received frame is None")
+            else:
+                logger.info("Frame received: %s", frame)
+            return frame
+        except Exception as e:
+            logger.error("Exception in recv: %s", str(e))
+            raise
 
 
 async def handle_offer(logger, pc, offer):
