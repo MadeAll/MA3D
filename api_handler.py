@@ -5,7 +5,7 @@ from PIL import Image
 from io import BytesIO
 import asyncio
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
-from aiortc.contrib.media import MediaStreamTrack
+from aiortc.contrib.media import MediaStreamTrack, MediaPlayer
 
 logger = None
 localhost = "http://localhost"
