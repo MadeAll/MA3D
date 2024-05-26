@@ -208,7 +208,10 @@ async def handle_offer(logger, pc, offer):
         pc.addTrack(stream)
         logger.info("Added track to RTCPeerConnection")
 
+        logger.info("Creating answer...")
         answer = await pc.createAnswer()
+        logger.info("Answer created: %s", answer)
+
         await pc.setLocalDescription(answer)
         logger.info("Local description set with answer: %s", answer)
 
@@ -231,7 +234,6 @@ def request_webRTC(url, message):
             offer = RTCSessionDescription(sdp=data["sdp"], type=data["type"])
             logger.info("Created RTCSessionDescription: %s", offer)
 
-            # 새로운 RTCPeerConnection 객체 생성
             pc = RTCPeerConnection()
             logger.info("Created RTCPeerConnection")
 
@@ -251,7 +253,6 @@ def request_webRTC(url, message):
             def on_track(event):
                 logger.info("Track received: %s", event)
 
-            # 명시적으로 이벤트 루프 생성 및 설정
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             logger.info("Event loop created and set")
@@ -261,7 +262,7 @@ def request_webRTC(url, message):
             response = json.dumps({"sdp": answer.sdp, "type": answer.type})
             logger.info("Response created: %s", response)
 
-            return response  # JSON 문자열로 변환하여 반환
+            return response
 
         elif url == "/candidate":
             logger.info("Handling ICE candidate")
@@ -275,7 +276,6 @@ def request_webRTC(url, message):
             )
             logger.info("Created RTCIceCandidate: %s", candidate)
 
-            # 명시적으로 이벤트 루프 생성 및 설정
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             logger.info("Event loop created and set")
