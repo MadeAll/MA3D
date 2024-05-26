@@ -188,12 +188,23 @@ class WebcamStreamTrack(MediaStreamTrack):
 
 
 async def handle_offer(logger, pc, offer):
-    await pc.setRemoteDescription(offer)
-    stream = WebcamStreamTrack()
-    pc.addTrack(stream)
-    answer = await pc.createAnswer()
-    await pc.setLocalDescription(answer)
-    return pc.localDescription
+    try:
+        logger.info("Setting remote description with offer: %s", offer)
+        await pc.setRemoteDescription(offer)
+        logger.info("Remote description set")
+
+        stream = WebcamStreamTrack()
+        pc.addTrack(stream)
+        logger.info("Added track to RTCPeerConnection")
+
+        answer = await pc.createAnswer()
+        await pc.setLocalDescription(answer)
+        logger.info("Local description set with answer: %s", answer)
+
+        return pc.localDescription
+    except Exception as e:
+        logger.error("Exception in handle_offer: %s", str(e))
+        raise
 
 
 def request_webRTC(url, message):
