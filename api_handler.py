@@ -4,7 +4,13 @@ import base64
 from PIL import Image
 from io import BytesIO
 import asyncio
-from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
+from aiortc import (
+    RTCPeerConnection,
+    RTCSessionDescription,
+    RTCIceCandidate,
+    RTCConfiguration,
+    RTCIceServer,
+)
 from aiortc.contrib.media import MediaStreamTrack, MediaPlayer
 
 logger = None
@@ -271,7 +277,10 @@ def request_webRTC(url, message):
             offer = RTCSessionDescription(sdp=data["sdp"], type=data["type"])
             logger.info("Created RTCSessionDescription: %s", offer)
 
-            pc = RTCPeerConnection()
+            configuration = RTCConfiguration(
+                iceServers=[RTCIceServer(urls="stun:stun.l.google.com:19302")]
+            )
+            pc = RTCPeerConnection(configuration=configuration)
             logger.info("Created RTCPeerConnection")
 
             @pc.on("icecandidate")
