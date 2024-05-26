@@ -287,6 +287,7 @@ def request_webRTC(url, message):
             def on_track(event):
                 logger.info("Track received: %s", event)
 
+            # Create a new event loop and set it as the current event loop
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             logger.info("Event loop created and set")
@@ -305,8 +306,14 @@ def request_webRTC(url, message):
             if not pc:
                 raise Exception("No peer connection found")
 
-            loop = asyncio.get_event_loop()
-            logger.info("Using existing event loop")
+            # Check if there is an existing event loop in the current thread, if not create one
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+
+            logger.info("Using event loop")
             loop.run_until_complete(handle_candidate(logger, pc, data))
             logger.info("Added ICE candidate to pc")
 
