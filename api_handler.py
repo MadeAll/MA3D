@@ -201,32 +201,23 @@ class WebcamStreamTrack(MediaStreamTrack):
 async def handle_offer(logger, pc, offer):
     try:
         logger.info("Setting remote description with offer: %s", offer)
-        await pc.setRemoteDescription(offer)
+        await pc.setRemoteDescription(
+            RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
+        )
         logger.info("Remote description set")
 
-        # Add tracks
         stream = WebcamStreamTrack()
         pc.addTrack(stream)
         logger.info("Added track to RTCPeerConnection")
 
-        # Create answer
         logger.info("Creating answer...")
         answer = await pc.createAnswer()
         logger.info("Answer created: %s", answer)
 
-        # Debugging: Log the created answer SDP
-        logger.debug("Created answer SDP: %s", answer.sdp)
-
-        # Set local description with the created answer
         logger.info("Setting local description...")
-        try:
-            await pc.setLocalDescription(answer)
-            logger.info("Local description set with answer: %s", answer)
-        except Exception as e:
-            logger.error("Error setting local description: %s", str(e))
-            raise
+        await pc.setLocalDescription(answer)
+        logger.info("Local description set with answer: %s", answer)
 
-        # Wait for ICE gathering to complete
         await gather_ice_candidates(logger, pc)
 
         return pc.localDescription
@@ -235,16 +226,33 @@ async def handle_offer(logger, pc, offer):
         raise
 
 
+async def handle_candidate(logger, pc, candidate):
+    try:
+        logger.info("Adding ICE candidate: %s", candidate)
+        ice_candidate = RTCIceCandidate(
+            sdpMid=candidate["sdpMid"],
+            sdpMLineIndex=candidate["sdpMLineIndex"],
+            candidate=candidate["candidate"],
+        )
+        await pc.addIceCandidate(ice_candidate)
+        logger.info("ICE candidate added")
+    except Exception as e:
+        logger.error("Exception in handle_candidate: %s", str(e))
+        raise
+
+
 async def gather_ice_candidates(logger, pc):
+    complete = asyncio.Event()
+
     @pc.on("icecandidate")
-    async def on_icecandidate(event):
+    def on_icecandidate(event):
         if event.candidate is None:
             logger.info("ICE gathering complete")
-            pc.iceGatheringState = "complete"
+            complete.set()
 
     logger.info("Waiting for ICE gathering to complete...")
-    while pc.iceGatheringState != "complete":
-        await asyncio.sleep(0.1)
+    await complete.wait()
+    logger.info("ICE gathering state is now complete")
 
 
 def request_webRTC(url, message):
