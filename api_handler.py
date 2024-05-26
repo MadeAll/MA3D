@@ -180,7 +180,7 @@ class WebcamStreamTrack(MediaStreamTrack):
 
     def __init__(self):
         super().__init__()
-        self.player = MediaPlayer("/dev/video0")
+        self.player = MediaPlayer("/dev/video9")
 
     async def recv(self):
         frame = await self.player.video.recv()
