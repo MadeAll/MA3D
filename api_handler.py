@@ -269,14 +269,8 @@ def request_webRTC(url, message):
             offer = RTCSessionDescription(sdp=data["sdp"], type=data["type"])
             logger.info("Created RTCSessionDescription: %s", offer)
 
-            stun_servers = [
-                {"urls": "stun:stun.l.google.com:19302"},
-                {"urls": "stun:stun1.l.google.com:19302"},
-                {"urls": "stun:stun2.l.google.com:19302"},
-            ]
-
-            pc = RTCPeerConnection(configuration={"iceServers": stun_servers})
-            logger.info("Created RTCPeerConnection with STUN servers")
+            pc = RTCPeerConnection()
+            logger.info("Created RTCPeerConnection")
 
             @pc.on("icecandidate")
             def on_icecandidate(event):
