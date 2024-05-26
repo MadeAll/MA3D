@@ -77,7 +77,7 @@ def getStatus():
 
         klippy_stat = requests.get(localhost + "/server/info")
         klippy_stat = klippy_stat.json()
-        if (klippy_stat.get("result", {}).get("klippy_state", {}) == "shutdown"):
+        if klippy_stat.get("result", {}).get("klippy_state", {}) == "shutdown":
             status = "shutdown"
 
         temp = requests.get(localhost + "/api/printer")
@@ -206,7 +206,7 @@ async def handle_offer(logger, pc, offer):
 
         stream = WebcamStreamTrack()
         pc.addTrack(stream)
-        logger.info("Added video track to RTCPeerConnection")
+        logger.info("Added track to RTCPeerConnection")
 
         logger.info("Creating answer...")
         answer = await pc.createAnswer()
@@ -244,9 +244,7 @@ async def gather_ice_candidates(logger, pc):
 
     @pc.on("icecandidate")
     def on_icecandidate(event):
-        if event.candidate:
-            logger.info("ICE candidate gathered: %s", event.candidate)
-        else:
+        if event.candidate is None:
             logger.info("ICE gathering complete")
             complete.set()
 
@@ -271,14 +269,8 @@ def request_webRTC(url, message):
             offer = RTCSessionDescription(sdp=data["sdp"], type=data["type"])
             logger.info("Created RTCSessionDescription: %s", offer)
 
-            stun_servers = [
-                {"urls": "stun:stun.l.google.com:19302"},
-                {"urls": "stun:stun1.l.google.com:19302"},
-                {"urls": "stun:stun2.l.google.com:19302"}
-            ]
-
-            pc = RTCPeerConnection(configuration={"iceServers": stun_servers})
-            logger.info("Created RTCPeerConnection with STUN servers")
+            pc = RTCPeerConnection()
+            logger.info("Created RTCPeerConnection")
 
             @pc.on("icecandidate")
             def on_icecandidate(event):
@@ -291,12 +283,6 @@ def request_webRTC(url, message):
                         }
                     )
                     logger.info("ICE candidate gathered: %s", candidate_message)
-
-            @pc.on("iceconnectionstatechange")
-            def on_iceconnectionstatechange():
-                logger.info("ICE connection state is %s", pc.iceConnectionState)
-                if pc.iceConnectionState == "failed":
-                    logger.error("ICE connection failed")
 
             @pc.on("track")
             def on_track(event):
