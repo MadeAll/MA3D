@@ -56,7 +56,7 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
     message = payload.decode("utf-8")
     logger.info(f"Received message from '{topic}': {message}")
 
-    response = api_handler.main(logger, topic, message, mqtt_connection)
+    response = api_handler.main(logger, topic, message)
     if response:
         response_topic = topic.replace("/req/", "/res/")
 

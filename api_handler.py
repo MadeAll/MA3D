@@ -9,10 +9,9 @@ from aiortc.contrib.media import MediaStreamTrack
 
 logger = None
 localhost = "http://localhost"
-pcs = {}
 
 
-def main(log, topic, message, mqtt_connection):
+def main(log, topic, message):
     global logger
     logger = log
     try:
@@ -56,7 +55,7 @@ def main(log, topic, message, mqtt_connection):
             if len(parts) > 1:
                 path = parts[1]
                 logger.debug(f"Calling request_webRTC with path: {path}")
-                res["message"] = request_webRTC(path, message_dict, mqtt_connection)
+                res["message"] = request_webRTC(path, message_dict)
             else:
                 logger.warning("No path found after /webrtc in topic")
 
@@ -197,12 +196,13 @@ async def handle_offer(logger, pc, offer):
     return pc.localDescription
 
 
-def request_webRTC(url, message, mqtt_connection):
+def request_webRTC(url, message):
     try:
         logger.info("request_webRTC called with url: %s and message: %s", url, message)
-        
+
         if url == "/setup":
             data = message
+
             response = None
 
             logger.info("Handling WebRTC setup")
@@ -211,8 +211,7 @@ def request_webRTC(url, message, mqtt_connection):
 
             # 새로운 RTCPeerConnection 객체 생성
             pc = RTCPeerConnection()
-            pcs[data["id"]] = pc
-            logger.info("Created RTCPeerConnection for id: %s", data["id"])
+            logger.info("Created RTCPeerConnection")
 
             @pc.on("icecandidate")
             def on_icecandidate(event):
@@ -222,15 +221,9 @@ def request_webRTC(url, message, mqtt_connection):
                             "candidate": event.candidate.candidate,
                             "sdpMid": event.candidate.sdpMid,
                             "sdpMLineIndex": event.candidate.sdpMLineIndex,
-                            "id": data["id"]
                         }
                     )
-                    logger.info("Publishing ICE candidate: %s", candidate_message)
-                    mqtt_connection.publish(
-                        topic=f"{data['id']}/req/webrtc/candidate",
-                        payload=candidate_message,
-                        qos=mqtt.QoS.AT_LEAST_ONCE,
-                    )
+                    logger.info("ICE candidate gathered: %s", candidate_message)
 
             @pc.on("track")
             def on_track(event):
@@ -241,26 +234,27 @@ def request_webRTC(url, message, mqtt_connection):
             answer = loop.run_until_complete(handle_offer(logger, pc, offer))
             logger.info("Created answer: %s", answer)
 
-            response = json.dumps({"sdp": answer.sdp, "type": answer.type, "id": data["id"]})
+            response = json.dumps({"sdp": answer.sdp, "type": answer.type})
             logger.info("Response created: %s", response)
 
             return response  # JSON 문자열로 변환하여 반환
 
         elif url == "/candidate":
             logger.info("Handling ICE candidate")
-            pc = pcs.get(message["id"])
-            if pc:
-                candidate = RTCIceCandidate(
-                    candidate=message["candidate"],
-                    sdpMid=message["sdpMid"],
-                    sdpMLineIndex=message["sdpMLineIndex"]
-                )
-                logger.info("Created RTCIceCandidate: %s", candidate)
+            data = message
 
-                loop = asyncio.get_event_loop()
-                logger.info("Event loop obtained")
-                loop.run_until_complete(pc.addIceCandidate(candidate))
-                logger.info("Added ICE candidate to pc")
+            pc = RTCPeerConnection()
+            candidate = RTCIceCandidate(
+                candidate=data["candidate"],
+                sdpMid=data["sdpMid"],
+                sdpMLineIndex=data["sdpMLineIndex"],
+            )
+            logger.info("Created RTCIceCandidate: %s", candidate)
+
+            loop = asyncio.get_event_loop()
+            logger.info("Event loop obtained")
+            loop.run_until_complete(pc.addIceCandidate(candidate))
+            logger.info("Added ICE candidate to pc")
 
     except Exception as e:
         logger.error("Exception in request_webRTC: %s", str(e))
