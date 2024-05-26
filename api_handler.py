@@ -1,17 +1,9 @@
 import requests
 import json
 import base64
+import mqtt
 from PIL import Image
 from io import BytesIO
-import asyncio
-from aiortc import (
-    RTCPeerConnection,
-    RTCSessionDescription,
-    RTCIceCandidate,
-    RTCConfiguration,
-    RTCIceServer,
-)
-from aiortc.contrib.media import MediaStreamTrack, MediaPlayer
 
 logger = None
 localhost = "http://localhost"
@@ -56,15 +48,6 @@ def main(log, topic, message):
                 res["message"] = request_DELETE(path)
             else:
                 logger.warning("No path found after /DELETE in topic")
-        elif "/webrtc" in topic:
-            parts = topic.split("/webrtc")
-            if len(parts) > 1:
-                path = parts[1]
-                logger.debug(f"Calling request_webRTC with path: {path}")
-                res["message"] = request_webRTC(path, message_dict)
-            else:
-                logger.warning("No path found after /webrtc in topic")
-
         return json.dumps(res)  # JSON 문자열로 변환하여 반환
     except Exception as e:
         return json.dumps({"error": str(e)})
@@ -178,153 +161,4 @@ def request_DELETE(url):
         response = response.json()  # 응답을 JSON 딕셔너리로 변환
         return json.dumps(response["result"])  # JSON 문자열로 변환하여 반환
     except Exception as e:
-        return json.dumps({"error": str(e)})
-
-
-class WebcamStreamTrack(MediaStreamTrack):
-    kind = "video"
-
-    def __init__(self):
-        super().__init__()
-        self.player = MediaPlayer(localhost + "/webcam/?action=stream")
-        logger.info(
-            "MediaPlayer created with source: http://localhost/webcam/?action=stream"
-        )
-
-    async def recv(self):
-        try:
-            frame = await self.player.video.recv()
-            if frame is None:
-                logger.error("Received frame is None")
-            else:
-                logger.info("Frame received: %s", frame)
-            return frame
-        except Exception as e:
-            logger.error("Exception in recv: %s", str(e))
-            raise
-
-
-async def handle_offer(logger, pc, offer):
-    try:
-        logger.info("Setting remote description with offer: %s", offer)
-        await pc.setRemoteDescription(offer)
-        logger.info("Remote description set")
-
-        stream = WebcamStreamTrack()
-        pc.addTrack(stream)
-        logger.info("Added track to RTCPeerConnection")
-
-        logger.info("Creating answer...")
-        answer = await pc.createAnswer()
-        logger.info("Answer created: %s", answer)
-
-        logger.info("Setting local description...")
-        await pc.setLocalDescription(answer)
-        logger.info("Local description set with answer: %s", answer)
-
-        await gather_ice_candidates(logger, pc)
-
-        return pc.localDescription
-    except Exception as e:
-        logger.error("Exception in handle_offer: %s", str(e))
-        raise
-
-
-async def handle_candidate(logger, pc, candidate):
-    try:
-        logger.info("Adding ICE candidate: %s", candidate)
-        ice_candidate = RTCIceCandidate(
-            sdpMid=candidate["sdpMid"],
-            sdpMLineIndex=candidate["sdpMLineIndex"],
-            candidate=candidate["candidate"],
-        )
-        await pc.addIceCandidate(ice_candidate)
-        logger.info("ICE candidate added")
-    except Exception as e:
-        logger.error("Exception in handle_candidate: %s", str(e))
-        raise
-
-
-async def gather_ice_candidates(logger, pc):
-    complete = asyncio.Event()
-
-    @pc.on("icecandidate")
-    def on_icecandidate(event):
-        if event.candidate is not None:
-            logger.debug(f"New ICE candidate: {event.candidate}")
-        else:
-            logger.info("ICE gathering complete")
-            complete.set()
-
-    logger.info("Waiting for ICE gathering to complete...")
-    await complete.wait()
-    logger.info("ICE gathering state is now complete")
-
-
-pc = None  # 전역 RTCPeerConnection 객체
-
-
-def request_webRTC(url, message):
-    global pc  # 전역 객체 사용
-    try:
-        logger.info("request_webRTC called with url: %s and message: %s", url, message)
-
-        if url == "/setup":
-            data = message
-            response = None
-
-            logger.info("Handling WebRTC setup")
-            offer = RTCSessionDescription(sdp=data["sdp"], type=data["type"])
-            logger.info("Created RTCSessionDescription: %s", offer)
-
-            configuration = RTCConfiguration(
-                iceServers=[RTCIceServer(urls="stun:stun.l.google.com:19302")]
-            )
-            pc = RTCPeerConnection(configuration=configuration)
-            logger.info("Created RTCPeerConnection")
-
-            @pc.on("icecandidate")
-            def on_icecandidate(event):
-                if event.candidate:
-                    candidate_message = json.dumps(
-                        {
-                            "candidate": event.candidate.candidate,
-                            "sdpMid": event.candidate.sdpMid,
-                            "sdpMLineIndex": event.candidate.sdpMLineIndex,
-                        }
-                    )
-                    logger.info("ICE candidate gathered: %s", candidate_message)
-
-            @pc.on("track")
-            def on_track(event):
-                logger.info("Track received: %s", event)
-
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            logger.info("Event loop created and set")
-            answer = loop.run_until_complete(handle_offer(logger, pc, offer))
-            logger.info("Created answer: %s", answer)
-
-            response = json.dumps({"sdp": answer.sdp, "type": answer.type})
-            logger.info("Response created: %s", response)
-
-            return response
-
-        elif url == "/candidate":
-            logger.info("Handling ICE candidate")
-            data = message
-
-            if not pc:
-                raise Exception("No peer connection found")
-
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            logger.info("Event loop created and set")
-            loop.run_until_complete(handle_candidate(logger, pc, data))
-            logger.info("Added ICE candidate to pc")
-
-            return json.dumps({"message": "ICE candidate added"})
-
-    except Exception as e:
-        logger.error("Exception in request_webRTC: %s", str(e))
         return json.dumps({"error": str(e)})
