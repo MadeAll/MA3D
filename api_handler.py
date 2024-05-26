@@ -255,10 +255,78 @@ async def gather_ice_candidates(logger, pc):
     logger.info("ICE gathering state is now complete")
 
 
-connections = {}  # 전역 딕셔너리로 RTCPeerConnection 객체 관리
+pc = None  # 전역 RTCPeerConnection 객체
 
 
 def request_webRTC(url, message):
+    global pc  # 전역 객체 사용
+    try:
+        logger.info("request_webRTC called with url: %s and message: %s", url, message)
+
+        if url == "/setup":
+            data = message
+            response = None
+
+            logger.info("Handling WebRTC setup")
+            offer = RTCSessionDescription(sdp=data["sdp"], type=data["type"])
+            logger.info("Created RTCSessionDescription: %s", offer)
+
+            pc = RTCPeerConnection()
+            logger.info("Created RTCPeerConnection")
+
+            @pc.on("icecandidate")
+            def on_icecandidate(event):
+                if event.candidate:
+                    candidate_message = json.dumps(
+                        {
+                            "candidate": event.candidate.candidate,
+                            "sdpMid": event.candidate.sdpMid,
+                            "sdpMLineIndex": event.candidate.sdpMLineIndex,
+                        }
+                    )
+                    logger.info("ICE candidate gathered: %s", candidate_message)
+
+            @pc.on("track")
+            def on_track(event):
+                logger.info("Track received: %s", event)
+
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            logger.info("Event loop created and set")
+            answer = loop.run_until_complete(handle_offer(logger, pc, offer))
+            logger.info("Created answer: %s", answer)
+
+            response = json.dumps({"sdp": answer.sdp, "type": answer.type})
+            logger.info("Response created: %s", response)
+
+            return response
+
+        elif url == "/candidate":
+            logger.info("Handling ICE candidate")
+            data = message
+
+            if not pc:
+                raise Exception("No peer connection found")
+
+            candidate = RTCIceCandidate(
+                candidate=data["candidate"],
+                sdpMid=data["sdpMid"],
+                sdpMLineIndex=data["sdpMLineIndex"],
+            )
+            logger.info("Created RTCIceCandidate: %s", candidate)
+
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            logger.info("Event loop created and set")
+            loop.run_until_complete(pc.addIceCandidate(candidate))
+            logger.info("Added ICE candidate to pc")
+
+            return json.dumps({"message": "ICE candidate added"})
+
+    except Exception as e:
+        logger.error("Exception in request_webRTC: %s", str(e))
+        return json.dumps({"error": str(e)})
+
     try:
         logger.info("request_webRTC called with url: %s and message: %s", url, message)
 
