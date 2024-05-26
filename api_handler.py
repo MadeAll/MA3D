@@ -244,7 +244,9 @@ async def gather_ice_candidates(logger, pc):
 
     @pc.on("icecandidate")
     def on_icecandidate(event):
-        if event.candidate is None:
+        if event.candidate is not None:
+            logger.debug(f"New ICE candidate: {event.candidate}")
+        else:
             logger.info("ICE gathering complete")
             complete.set()
 
