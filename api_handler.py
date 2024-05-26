@@ -217,6 +217,7 @@ def request_webRTC(url, message, mqtt_connection):
                             "candidate": event.candidate.candidate,
                             "sdpMid": event.candidate.sdpMid,
                             "sdpMLineIndex": event.candidate.sdpMLineIndex,
+                            "id": data["id"],
                         }
                     )
                     mqtt_connection.publish(
@@ -231,60 +232,12 @@ def request_webRTC(url, message, mqtt_connection):
 
             loop = asyncio.get_event_loop()
             answer = loop.run_until_complete(handle_offer(logger, pc, offer))
-            response = json.dumps({"sdp": answer.sdp, "type": answer.type})
+            response = json.dumps(
+                {"sdp": answer.sdp, "type": answer.type, "id": data["id"]}
+            )
 
             return response  # JSON 문자열로 변환하여 반환
-        elif url == "/candidate":
-            logger.info("Handling ICE candidate")
-            pc = pcs.get(message["id"])
-            if pc:
-                candidate = RTCIceCandidate(
-                    candidate=message["candidate"],
-                    sdpMid=message["sdpMid"],
-                    sdpMLineIndex=message["sdpMLineIndex"],
-                )
-                loop = asyncio.get_event_loop()
-                loop.run_until_complete(pc.addIceCandidate(candidate))
 
-    except Exception as e:
-        return json.dumps({"error": str(e)})
-    try:
-        if url == "/setup":
-            data = message
-            response = None
-
-            logger.info("Handling WebRTC setup")
-            offer = RTCSessionDescription(sdp=data["sdp"], type=data["type"])
-            # 새로운 RTCPeerConnection 객체 생성
-            pc = RTCPeerConnection()
-            pcs[data["id"]] = pc
-
-            @pc.on("icecandidate")
-            def on_icecandidate(event):
-                if event.candidate:
-                    candidate_message = json.dumps(
-                        {
-                            "candidate": event.candidate.candidate,
-                            "sdpMid": event.candidate.sdpMid,
-                            "sdpMLineIndex": event.candidate.sdpMLineIndex,
-                            "id": data["id"]
-                        }
-                    )
-                    mqtt_connection.publish(
-                        topic=f"{data['id']}/res/webrtc/candidate",
-                        payload=candidate_message,
-                        qos=mqtt.QoS.AT_LEAST_ONCE,
-                    )
-
-            @pc.on("track")
-            def on_track(event):
-                logger.info("Track received")
-
-            loop = asyncio.get_event_loop()
-            answer = loop.run_until_complete(handle_offer(logger, pc, offer))
-            response = json.dumps({"sdp": answer.sdp, "type": answer.type})
-
-            return response  # JSON 문자열로 변환하여 반환
         elif url == "/candidate":
             logger.info("Handling ICE candidate")
             pc = pcs.get(message["id"])
