@@ -255,13 +255,15 @@ async def gather_ice_candidates(logger, pc):
     logger.info("ICE gathering state is now complete")
 
 
+connections = {}  # 전역 딕셔너리로 RTCPeerConnection 객체 관리
+
+
 def request_webRTC(url, message):
     try:
         logger.info("request_webRTC called with url: %s and message: %s", url, message)
 
         if url == "/setup":
             data = message
-
             response = None
 
             logger.info("Handling WebRTC setup")
@@ -269,6 +271,7 @@ def request_webRTC(url, message):
             logger.info("Created RTCSessionDescription: %s", offer)
 
             pc = RTCPeerConnection()
+            connections[data["printerId"]] = pc  # printerId를 사용하여 pc 저장
             logger.info("Created RTCPeerConnection")
 
             @pc.on("icecandidate")
@@ -302,7 +305,13 @@ def request_webRTC(url, message):
             logger.info("Handling ICE candidate")
             data = message
 
-            pc = RTCPeerConnection()
+            pc = connections.get(data["printerId"])  # printerId로 pc 조회
+
+            if not pc:
+                raise Exception(
+                    "No peer connection found for printerId: %s" % data["printerId"]
+                )
+
             candidate = RTCIceCandidate(
                 candidate=data["candidate"],
                 sdpMid=data["sdpMid"],
@@ -315,6 +324,8 @@ def request_webRTC(url, message):
             logger.info("Event loop created and set")
             loop.run_until_complete(pc.addIceCandidate(candidate))
             logger.info("Added ICE candidate to pc")
+
+            return json.dumps({"message": "ICE candidate added"})
 
     except Exception as e:
         logger.error("Exception in request_webRTC: %s", str(e))
