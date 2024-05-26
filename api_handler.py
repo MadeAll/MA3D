@@ -206,7 +206,7 @@ async def handle_offer(logger, pc, offer):
 
         stream = WebcamStreamTrack()
         pc.addTrack(stream)
-        logger.info("Added track to RTCPeerConnection")
+        logger.info("Added video track to RTCPeerConnection")
 
         logger.info("Creating answer...")
         answer = await pc.createAnswer()
@@ -244,7 +244,9 @@ async def gather_ice_candidates(logger, pc):
 
     @pc.on("icecandidate")
     def on_icecandidate(event):
-        if event.candidate is None:
+        if event.candidate:
+            logger.info("ICE candidate gathered: %s", event.candidate)
+        else:
             logger.info("ICE gathering complete")
             complete.set()
 
@@ -283,6 +285,12 @@ def request_webRTC(url, message):
                         }
                     )
                     logger.info("ICE candidate gathered: %s", candidate_message)
+
+            @pc.on("iceconnectionstatechange")
+            def on_iceconnectionstatechange():
+                logger.info("ICE connection state is %s", pc.iceConnectionState)
+                if pc.iceConnectionState == "failed":
+                    logger.error("ICE connection failed")
 
             @pc.on("track")
             def on_track(event):
