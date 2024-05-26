@@ -6,6 +6,7 @@ from io import BytesIO
 import asyncio
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
 from aiortc.contrib.media import MediaStreamTrack, MediaPlayer
+from concurrent.futures import ThreadPoolExecutor
 
 logger = None
 localhost = "http://localhost"
@@ -306,17 +307,15 @@ def request_webRTC(url, message):
             if not pc:
                 raise Exception("No peer connection found")
 
-            # Check if there is an existing event loop in the current thread, if not create one
-            try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+            # Use ThreadPoolExecutor to run handle_candidate in a separate thread
+            executor = ThreadPoolExecutor(max_workers=1)
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
 
-            logger.info("Using event loop")
-            loop.run_until_complete(handle_candidate(logger, pc, data))
+            future = executor.submit(asyncio.run, handle_candidate(logger, pc, data))
+            future.result()
+
             logger.info("Added ICE candidate to pc")
-
             return json.dumps({"message": "ICE candidate added"})
 
     except Exception as e:
