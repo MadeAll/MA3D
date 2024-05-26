@@ -180,7 +180,7 @@ class WebcamStreamTrack(MediaStreamTrack):
 
     def __init__(self):
         super().__init__()
-        self.player = MediaPlayer("http://localhost/webcam/?action=stream")
+        self.player = MediaPlayer(localhost + "/webcam/?action=stream")
         logger.info(
             "MediaPlayer created with source: http://localhost/webcam/?action=stream"
         )
@@ -204,21 +204,47 @@ async def handle_offer(logger, pc, offer):
         await pc.setRemoteDescription(offer)
         logger.info("Remote description set")
 
+        # Add tracks
         stream = WebcamStreamTrack()
         pc.addTrack(stream)
         logger.info("Added track to RTCPeerConnection")
 
+        # Create answer
         logger.info("Creating answer...")
         answer = await pc.createAnswer()
         logger.info("Answer created: %s", answer)
 
-        await pc.setLocalDescription(answer)
-        logger.info("Local description set with answer: %s", answer)
+        # Debugging: Log the created answer SDP
+        logger.debug("Created answer SDP: %s", answer.sdp)
+
+        # Set local description with the created answer
+        logger.info("Setting local description...")
+        try:
+            await pc.setLocalDescription(answer)
+            logger.info("Local description set with answer: %s", answer)
+        except Exception as e:
+            logger.error("Error setting local description: %s", str(e))
+            raise
+
+        # Wait for ICE gathering to complete
+        await gather_ice_candidates(logger, pc)
 
         return pc.localDescription
     except Exception as e:
         logger.error("Exception in handle_offer: %s", str(e))
         raise
+
+
+async def gather_ice_candidates(logger, pc):
+    @pc.on("icecandidate")
+    async def on_icecandidate(event):
+        if event.candidate is None:
+            logger.info("ICE gathering complete")
+            pc.iceGatheringState = "complete"
+
+    logger.info("Waiting for ICE gathering to complete...")
+    while pc.iceGatheringState != "complete":
+        await asyncio.sleep(0.1)
 
 
 def request_webRTC(url, message):
