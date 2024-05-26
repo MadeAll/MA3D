@@ -257,6 +257,7 @@ async def gather_ice_candidates(logger, pc):
 
 pc = None  # 전역 RTCPeerConnection 객체
 
+
 def request_webRTC(url, message):
     global pc  # 전역 객체 사용
     try:
@@ -307,17 +308,10 @@ def request_webRTC(url, message):
             if not pc:
                 raise Exception("No peer connection found")
 
-            candidate = RTCIceCandidate(
-                candidate=data["candidate"],
-                sdpMid=data["sdpMid"],
-                sdpMLineIndex=data["sdpMLineIndex"],
-            )
-            logger.info("Created RTCIceCandidate: %s", candidate)
-
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             logger.info("Event loop created and set")
-            loop.run_until_complete(pc.addIceCandidate(candidate))
+            loop.run_until_complete(handle_candidate(logger, pc, data))
             logger.info("Added ICE candidate to pc")
 
             return json.dumps({"message": "ICE candidate added"})
