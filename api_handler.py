@@ -196,7 +196,7 @@ async def handle_offer(logger, pc, offer):
     return pc.localDescription
 
 
-def request_webRTC(url, message, mqtt_connection):
+def request_webRTC(url, message):
     try:
         logger.info("request_webRTC called with url: %s and message: %s", url, message)
 
