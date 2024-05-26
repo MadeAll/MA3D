@@ -201,9 +201,7 @@ class WebcamStreamTrack(MediaStreamTrack):
 async def handle_offer(logger, pc, offer):
     try:
         logger.info("Setting remote description with offer: %s", offer)
-        await pc.setRemoteDescription(
-            RTCSessionDescription(sdp=offer["sdp"], type=offer["type"])
-        )
+        await pc.setRemoteDescription(offer)
         logger.info("Remote description set")
 
         stream = WebcamStreamTrack()
