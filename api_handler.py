@@ -199,15 +199,20 @@ async def handle_offer(logger, pc, offer):
 
 def request_webRTC(url, message, mqtt_connection):
     try:
+        logger.info("request_webRTC called with url: %s and message: %s", url, message)
+        
         if url == "/setup":
             data = message
             response = None
 
             logger.info("Handling WebRTC setup")
             offer = RTCSessionDescription(sdp=data["sdp"], type=data["type"])
+            logger.info("Created RTCSessionDescription: %s", offer)
+
             # 새로운 RTCPeerConnection 객체 생성
             pc = RTCPeerConnection()
             pcs[data["id"]] = pc
+            logger.info("Created RTCPeerConnection for id: %s", data["id"])
 
             @pc.on("icecandidate")
             def on_icecandidate(event):
@@ -217,9 +222,10 @@ def request_webRTC(url, message, mqtt_connection):
                             "candidate": event.candidate.candidate,
                             "sdpMid": event.candidate.sdpMid,
                             "sdpMLineIndex": event.candidate.sdpMLineIndex,
-                            "id": data["id"],
+                            "id": data["id"]
                         }
                     )
+                    logger.info("Publishing ICE candidate: %s", candidate_message)
                     mqtt_connection.publish(
                         topic=f"{data['id']}/req/webrtc/candidate",
                         payload=candidate_message,
@@ -228,13 +234,15 @@ def request_webRTC(url, message, mqtt_connection):
 
             @pc.on("track")
             def on_track(event):
-                logger.info("Track received")
+                logger.info("Track received: %s", event)
 
             loop = asyncio.get_event_loop()
+            logger.info("Event loop obtained")
             answer = loop.run_until_complete(handle_offer(logger, pc, offer))
-            response = json.dumps(
-                {"sdp": answer.sdp, "type": answer.type, "id": data["id"]}
-            )
+            logger.info("Created answer: %s", answer)
+
+            response = json.dumps({"sdp": answer.sdp, "type": answer.type, "id": data["id"]})
+            logger.info("Response created: %s", response)
 
             return response  # JSON 문자열로 변환하여 반환
 
@@ -245,10 +253,15 @@ def request_webRTC(url, message, mqtt_connection):
                 candidate = RTCIceCandidate(
                     candidate=message["candidate"],
                     sdpMid=message["sdpMid"],
-                    sdpMLineIndex=message["sdpMLineIndex"],
+                    sdpMLineIndex=message["sdpMLineIndex"]
                 )
+                logger.info("Created RTCIceCandidate: %s", candidate)
+
                 loop = asyncio.get_event_loop()
+                logger.info("Event loop obtained")
                 loop.run_until_complete(pc.addIceCandidate(candidate))
+                logger.info("Added ICE candidate to pc")
 
     except Exception as e:
+        logger.error("Exception in request_webRTC: %s", str(e))
         return json.dumps({"error": str(e)})
