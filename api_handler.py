@@ -63,6 +63,7 @@ def getStatus():
         # 필요한 데이터 추출
         print_stats = stat.get("result", {}).get("status", {}).get("print_stats", {})
         status = print_stats.get("state")
+        state_message = print_stats.get("state_message")
         filename = print_stats.get("filename")
         print_duration = print_stats.get("print_duration")
 
@@ -102,6 +103,7 @@ def getStatus():
         # 새로운 딕셔너리 생성
         extracted_data = {
             "status": status,
+            "state_message": state_message,
             "filename": filename,
             "print_duration": print_duration,
             "estimated_time": estimated_time,
