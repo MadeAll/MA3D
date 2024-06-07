@@ -2,6 +2,7 @@ import requests
 import json
 import threading
 import time
+import os
 import base64
 from PIL import Image
 from io import BytesIO
@@ -116,54 +117,66 @@ def getStatus():
         return json.dumps({"error": str(e)})
 
 
-def uploadFile(filename, download_url, timeout=60):
+def uploadFile(filename, download_url, timeout=60, max_retries=3):
     result = {}
+    retry_count = 0
 
     def download_task():
-        nonlocal result
-        try:
-            # 파일 저장 경로 설정
-            save_path = f"/home/biqu/printer_data/gcodes/{filename}"
+        nonlocal result, retry_count
+        save_path = f"/home/biqu/printer_data/gcodes/{filename}"
 
-            # Firebase Storage에서 파일 다운로드
-            response = requests.get(download_url, stream=True, timeout=timeout)
-            if response.status_code == 200:
-                # 로컬에 파일 저장
-                with open(save_path, "wb") as file:
-                    start_time = time.time()
-                    for chunk in response.iter_content(chunk_size=1024):
-                        file.write(chunk)
-                        # 시간 초과 체크
-                        if time.time() - start_time > timeout:
-                            raise TimeoutError("Download timed out")    
-                # 성공 메시지 반환
-                result = {"message": "File successfully downloaded"}
-            else:
-                # 다운로드 실패 시 오류 메시지 반환
-                result = {
-                    "error": "Failed to download file",
-                    "status_code": response.status_code,
-                }
-        except requests.exceptions.RequestException as e:
-            # 네트워크 관련 예외 처리
-            result = {"error": "Network error occurred", "details": str(e)}
-        except TimeoutError as e:
-            # 타임아웃 예외 처리
-            result = {"error": str(e)}
-        except Exception as e:
-            # 일반 예외 처리
-            result = {"error": "An error occurred", "details": str(e)}
+        while retry_count < max_retries:
+            try:
+                # Firebase Storage에서 파일 다운로드
+                response = requests.get(download_url, stream=True, timeout=timeout)
+                if response.status_code == 200:
+                    # 임시 파일 경로 설정
+                    temp_save_path = f"{save_path}.part"
+
+                    # 로컬에 임시 파일로 저장
+                    with open(temp_save_path, "wb") as file:
+                        start_time = time.time()
+                        for chunk in response.iter_content(chunk_size=1024):
+                            file.write(chunk)
+                            # 시간 초과 체크
+                            if time.time() - start_time > timeout:
+                                raise TimeoutError("Download timed out")
+
+                    # 임시 파일을 최종 파일로 이동
+                    os.rename(temp_save_path, save_path)
+
+                    # 성공 메시지 반환
+                    result = {"message": "File successfully downloaded"}
+                    return
+                else:
+                    result = {
+                        "error": "Failed to download file",
+                        "status_code": response.status_code,
+                    }
+                    retry_count += 1
+            except requests.exceptions.RequestException as e:
+                result = {"error": "Network error occurred", "details": str(e)}
+                retry_count += 1
+            except TimeoutError as e:
+                result = {"error": str(e)}
+                retry_count += 1
+            except Exception as e:
+                result = {"error": "An error occurred", "details": str(e)}
+                retry_count += 1
+
+            # 재시도 전 대기 시간 추가 (exponential backoff)
+            time.sleep(2**retry_count)
+
+        # 최대 재시도 횟수 초과 시 에러 반환
+        if retry_count >= max_retries:
+            result = {"error": "Max retries exceeded"}
 
     # 백그라운드에서 다운로드 실행
     download_thread = threading.Thread(target=download_task)
     download_thread.start()
-    download_thread.join(timeout)
 
-    # 다운로드가 타임아웃되었을 경우
-    if download_thread.is_alive():
-        result = {"error": "Download task timed out and was terminated"}
-
-    return json.dumps(result)
+    # 즉시 반환하여 메인 스레드를 블로킹하지 않음
+    return json.dumps({"message": "Download started in the background"})
 
 
 def request_GET(url):
