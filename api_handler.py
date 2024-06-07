@@ -66,15 +66,11 @@ def getStatus():
         filename = print_stats.get("filename")
         print_duration = print_stats.get("print_duration")
 
-        klippy_stat = requests.get(localhost + "/server/info")
+        klippy_stat = requests.get(localhost + "/printer/info")
         klippy_stat = klippy_stat.json()
         if klippy_stat.get("result", {}).get("klippy_state", {}) == "shutdown":
             status = "shutdown"
-        warning = klippy_stat.get("warnings")
-        
-        printer_stat = requests.get(localhost + "/printer/info")
-        printer_stat = printer_stat.json()
-        state_message = printer_stat.get("state_message")
+        state_message = klippy_stat.get("state_message")
 
         temp = requests.get(localhost + "/api/printer")
         temp = temp.json()  # 응답을 JSON 딕셔너리로 변환
@@ -107,7 +103,6 @@ def getStatus():
         # 새로운 딕셔너리 생성
         extracted_data = {
             "status": status,
-            "warning": warning,
             "state_message": state_message,
             "filename": filename,
             "print_duration": print_duration,
