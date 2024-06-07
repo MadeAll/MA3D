@@ -117,9 +117,10 @@ def getStatus():
         return json.dumps({"error": str(e)})
 
 
-def uploadFile(filename, download_url, timeout=60, max_retries=3):
-    result = {}
+def uploadFile(filename, download_url, timeout=120, max_retries=3):
+    result = {"status": "initiated"}
     retry_count = 0
+    lock = threading.Lock()
 
     def download_task():
         nonlocal result, retry_count
@@ -146,22 +147,27 @@ def uploadFile(filename, download_url, timeout=60, max_retries=3):
                     os.rename(temp_save_path, save_path)
 
                     # 성공 메시지 반환
-                    result = {"message": "File successfully downloaded"}
+                    with lock:
+                        result = {"message": "File successfully downloaded"}
                     return
                 else:
-                    result = {
-                        "error": "Failed to download file",
-                        "status_code": response.status_code,
-                    }
+                    with lock:
+                        result = {
+                            "error": "Failed to download file",
+                            "status_code": response.status_code,
+                        }
                     retry_count += 1
             except requests.exceptions.RequestException as e:
-                result = {"error": "Network error occurred", "details": str(e)}
+                with lock:
+                    result = {"error": "Network error occurred", "details": str(e)}
                 retry_count += 1
             except TimeoutError as e:
-                result = {"error": str(e)}
+                with lock:
+                    result = {"error": str(e)}
                 retry_count += 1
             except Exception as e:
-                result = {"error": "An error occurred", "details": str(e)}
+                with lock:
+                    result = {"error": "An error occurred", "details": str(e)}
                 retry_count += 1
 
             # 재시도 전 대기 시간 추가 (exponential backoff)
@@ -169,7 +175,8 @@ def uploadFile(filename, download_url, timeout=60, max_retries=3):
 
         # 최대 재시도 횟수 초과 시 에러 반환
         if retry_count >= max_retries:
-            result = {"error": "Max retries exceeded"}
+            with lock:
+                result = {"error": "Max retries exceeded"}
 
     # 백그라운드에서 다운로드 실행
     download_thread = threading.Thread(target=download_task)
