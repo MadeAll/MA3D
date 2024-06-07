@@ -1,7 +1,8 @@
 import requests
 import json
+import threading
+import time
 import base64
-import mqtt
 from PIL import Image
 from io import BytesIO
 
@@ -115,26 +116,54 @@ def getStatus():
         return json.dumps({"error": str(e)})
 
 
-def uploadFile(filename, download_url):
-    try:
-        # 파일 저장 경로 설정
-        save_path = f"/home/biqu/printer_data/gcodes/{filename}"
+def uploadFile(filename, download_url, timeout=60):
+    result = {}
 
-        # Firebase Storage에서 파일 다운로드
-        response = requests.get(download_url, stream=True)
-        if response.status_code == 200:
-            # 로컬에 파일 저장
-            with open(save_path, "wb") as file:
-                for chunk in response.iter_content(chunk_size=1024):
-                    file.write(chunk)
-            # 성공 메시지 반환
-            return json.dumps({"message": "File successfully downloaded"})
-        else:
-            # 다운로드 실패 시 오류 메시지 반환
-            return json.dumps({"error": "Failed to download file"})
-    except Exception as e:
-        # 예외 발생 시 오류 메시지 반환
-        return json.dumps({"error": str(e)})
+    def download_task():
+        nonlocal result
+        try:
+            # 파일 저장 경로 설정
+            save_path = f"/home/biqu/printer_data/gcodes/{filename}"
+
+            # Firebase Storage에서 파일 다운로드
+            response = requests.get(download_url, stream=True, timeout=timeout)
+            if response.status_code == 200:
+                # 로컬에 파일 저장
+                with open(save_path, "wb") as file:
+                    start_time = time.time()
+                    for chunk in response.iter_content(chunk_size=1024):
+                        file.write(chunk)
+                        # 시간 초과 체크
+                        if time.time() - start_time > timeout:
+                            raise TimeoutError("Download timed out")    
+                # 성공 메시지 반환
+                result = {"message": "File successfully downloaded"}
+            else:
+                # 다운로드 실패 시 오류 메시지 반환
+                result = {
+                    "error": "Failed to download file",
+                    "status_code": response.status_code,
+                }
+        except requests.exceptions.RequestException as e:
+            # 네트워크 관련 예외 처리
+            result = {"error": "Network error occurred", "details": str(e)}
+        except TimeoutError as e:
+            # 타임아웃 예외 처리
+            result = {"error": str(e)}
+        except Exception as e:
+            # 일반 예외 처리
+            result = {"error": "An error occurred", "details": str(e)}
+
+    # 백그라운드에서 다운로드 실행
+    download_thread = threading.Thread(target=download_task)
+    download_thread.start()
+    download_thread.join(timeout)
+
+    # 다운로드가 타임아웃되었을 경우
+    if download_thread.is_alive():
+        result = {"error": "Download task timed out and was terminated"}
+
+    return json.dumps(result)
 
 
 def request_GET(url):
