@@ -58,7 +58,8 @@ add_updater()
 install_module()
 {
     echo -n "Install modules..."
-    pip3 install requests
+    pip3 install requests Pillow
+    echo "[OK]"
 }
 
 create_service()
