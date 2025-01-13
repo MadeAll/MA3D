@@ -68,19 +68,6 @@ install_module() {
     echo "[OK]"
 }
 
-install_zrok() {
-    echo -n "Checking for zrok-share installation... "
-
-    if ! dpkg-query -W -f='${Status}' zrok-share 2>/dev/null | grep -q "install ok installed"; then
-        echo "zrok-share not found, installing..."
-        sudo apt install zrok-share
-    else
-        echo "zrok-share is already installed."
-    fi
-
-    echo "[OK]"
-}
-
 create_service()
 {
     # Define the path to the predefined service file
@@ -115,57 +102,86 @@ add_config() {
     sed -i "s/^id:.*$/id: ${ID}/" "$TARGET_CFG_PATH"
     echo "[OK] Updated 'id' in MA3D.cfg"
 
-    # Zrok 환경 파일 경로
-    ENV_FILE="/opt/openziti/etc/zrok/zrok-share.env"
 
-    ID_LOWER=$(echo "$ID" | tr '[:upper:]' '[:lower:]')  # ID를 소문자로 변환
+    echo -n "CloudFlare installation... "
 
-    # 변경할 변수들
-    VARIABLES=(
-        "ZROK_ENABLE_TOKEN=\"edAmlRZl7u2k\""
-        "ZROK_ENVIRONMENT_NAME=\"$ID_LOWER\""
-        "ZROK_UNIQUE_NAME=\"$ID_LOWER\""
-    )
-
-    # 각 변수 처리
-    for VAR in "${VARIABLES[@]}"; do
-        KEY=$(echo "$VAR" | cut -d= -f1)  # 변수 이름 추출
-        VALUE=$(echo "$VAR" | cut -d= -f2-)  # 변수 값 추출
-
-        # 변수 이름이 있는 줄 찾기 (주석 포함)
-        if grep -q "^#\?\($KEY\)=" "$ENV_FILE"; then
-            # 기존 변수 값 변경 (주석이 포함된 경우 주석 제거)
-            sudo sed -i "s|^#\?\($KEY\)=.*|\1=$VALUE|" "$ENV_FILE"
-        else
-            # 변수 추가
-            echo "$VAR" | sudo tee -a "$ENV_FILE" > /dev/null
-        fi
-
-        # 상태 출력
-        echo "Updated $KEY in zrok-share.env"
-    done
-
-    # 특수 처리: ZROK_BACKEND_MODE="proxy" 아래의 ZROK_TARGET만 수정
-    sudo sed -i '/^ZROK_BACKEND_MODE="proxy"/{
-        n
-        s|^ZROK_TARGET=.*|ZROK_TARGET="http://127.0.0.1:80"|
-    }' "$ENV_FILE"
-
-    echo "Updated ZROK_TARGET under ZROK_BACKEND_MODE=\"proxy\" in zrok-share.env"
-
-    # Moonraker 설정 파일에서 trusted_clients 수정
-    MOONRAKER_CFG="/home/biqu/printer_data/config/moonraker.conf"
-    echo "Modifying moonraker.cfg: commenting out 127.0.0.0/8 in [authorization]"
-    sudo sed -i '/^\s*trusted_clients:/,/^$/ s|^\s*127\.0\.0\.0/8|# 127.0.0.0/8|' "$MOONRAKER_CFG"
-    echo "[OK] Updated [authorization] in moonraker.cfg"
-    
-    # Enable Zrok service
-    if ! systemctl is-active --quiet zrok-share.service; then
-        sudo systemctl enable --now zrok-share.service
-        echo "zrok-share.service is now enabled."
-    else
-        echo "zrok-share.service is already running."
+    # Cloudflared 설치 여부 확인
+    if ! command -v cloudflared &> /dev/null; then
+        echo "cloudflared not found. Please install it first."
+        exit 1
     fi
+
+    # 터널 존재 여부 확인
+    if cloudflared tunnel list | grep -q "printer-$ID"; then
+        echo "Tunnel 'printer-$ID' already exists. Skipping creation."
+    else
+        echo "Creating Cloudflare tunnel with ID 'printer-$ID'..."
+        cloudflared tunnel create "printer-$ID"
+    fi
+
+    echo "Cloudflare tunnel setup complete."
+
+    # Find the credentials file
+    CREDENTIALS_FILE=$(find "/home/biqu/.cloudflared" -type f -name "*.json" | head -n 1)
+    if [ -z "$CREDENTIALS_FILE" ]; then
+        echo "Error: No .json credentials file found!"
+        exit 1
+    fi
+
+    CONFIG_FILE="/etc/cloudflared/config.yml"
+
+    # 디렉토리 생성 및 config.yml 작성
+    sudo mkdir -p /etc/cloudflared
+    # Generate config.yml
+    sudo bash -c "cat > $CONFIG_FILE" <<EOL
+    tunnel: printer-$ID
+    credentials-file: $CREDENTIALS_FILE
+
+    ingress:
+    - hostname: printer-$ID.madeall3d.com
+      service: http://localhost:80
+    - service: http_status:404
+EOL
+
+    # Print result
+    echo "Config file generated at $CONFIG_FILE"
+
+    sudo cp /home/biqu/.cloudflared/cert.pem /etc/cloudflared/cert.pem
+
+    cloudflared tunnel route dns printer-$ID printer-$ID.madeall3d.com
+
+    # Generate service
+    sudo bash -c "cat > /etc/systemd/system/cloudflared.service" <<EOL
+    [Unit]
+    Description=Cloudflare Tunnel Service
+    After=network.target
+
+    [Service]
+    Type=simple
+    Restart=always
+    RestartSec=5s
+    ExecStart=/usr/local/bin/cloudflared tunnel run printer-$ID
+    WorkingDirectory=/etc/cloudflared
+    User=root
+
+    [Install]
+    WantedBy=multi-user.target
+EOL
+
+    sudo systemctl daemon-reload
+    sudo systemctl start cloudflared
+    sudo systemctl enable cloudflared
+
+    MOONRAKER_CFG="/home/biqu/printer_data/config/moonraker.conf"
+
+    echo "Modifying moonraker.cfg: Adding cors_domain to [authorization]"
+    sudo sed -i '/^\[authorization\]/,/^$/ {
+        /cors_domain:/ s|cors_domain:.*|cors_domain: *.printer.madeall3d.com|g
+        t
+        /^\[authorization\]/ a\
+    cors_domain: *.printer.madeall3d.com
+    }' "$MOONRAKER_CFG"
+    echo "[OK] Added cors_domain: *.printer.madeall3d.com to [authorization] in moonraker.cfg"
 }
 
 restart_moonraker()
@@ -179,7 +195,6 @@ restart_moonraker()
 verify_not_root
 add_updater
 install_module
-install_zrok
 create_service
 add_config
 restart_moonraker

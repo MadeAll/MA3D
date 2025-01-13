@@ -68,7 +68,18 @@ git clone https://oauth2:github_pat_11AW7A7DA0y6xJpb0DSUeB_CcwQExjqoJN82w8THUHxi
 
 2. **ADD AWS IoT Certs**
 
-Add Printer at web page, create device in AWS by same id
+Add Printer at web page, and copy the Device ID.
+Install CloudFlared for tunneling service.
+```
+wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm
+chmod +x cloudflared-linux-arm
+sudo mv cloudflared-linux-arm /usr/local/bin/cloudflared
+```
+Login Cloudflare Service (Login As gucciheon@gmail.com)
+```
+cloudflared tunnel login
+```
+create device in AWS by same id
 Upload connect_device_package.zip File to MA3D/AWS
 
 ```
