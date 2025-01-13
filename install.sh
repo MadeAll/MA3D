@@ -8,14 +8,12 @@ MOONRAKER_ASVC="${HOME}/printer_data/moonraker.asvc"
 MOONRAKER_CONFIG="${HOME}/printer_data/config/moonraker.conf"
 MA3D_SERVICE="${SYSTEMDDIR}/ma3d.service"
 MA3D_DIR="${HOME}/MA3D"
-CURRENT_USER=${USER}
+CURRENT_USER=${USER:-"biqu"}  # 기본 값 설정
 
 # Ensure the script exits on any error
 set -e
 
 # Verify if the script is run as the root user
-# This function checks if the current user is not root and exits with an error if it is.
-# Running as root is not recommended for this script due to potential security risks and permissions issues.
 verify_not_root() {
     if [ "$EUID" -eq 0 ]; then
         echo "Error: This script should not be run as root. Please run as a regular user." >&2
@@ -55,10 +53,31 @@ add_updater()
     fi
 }
 
-install_module()
-{
-    echo -n "Install modules..."
-    pip3 install requests Pillow
+install_module() {
+    echo -n "Checking and installing Python modules... "
+
+    for module in requests Pillow; do
+        if ! python3 -c "import $module" &>/dev/null; then
+            echo "Installing $module..."
+            pip3 install "$module" || { echo "Failed to install $module"; exit 1; }
+        else
+            echo "$module is already installed."
+        fi
+    done
+
+    echo "[OK]"
+}
+
+install_zrok() {
+    echo -n "Checking for zrok-share installation... "
+
+    if ! dpkg-query -W -f='${Status}' zrok-share 2>/dev/null | grep -q "install ok installed"; then
+        echo "zrok-share not found, installing..."
+        sudo apt install zrok-share
+    else
+        echo "zrok-share is already installed."
+    fi
+
     echo "[OK]"
 }
 
@@ -79,34 +98,74 @@ create_service()
     echo "[OK]"
 }
 
-add_config()
-{
-    # Define the path to the original and target MA3D.cfg files
+add_config() {
     ORIGINAL_CFG_FILE="./config/MA3D.cfg"
     TARGET_CFG_PATH="/home/biqu/printer_data/config/MA3D.cfg"
 
-    # Find the first AWS certificate file that matches the pattern {id}.cert.pem
     CERT_FILE=$(find "./AWS" -name "*.cert.pem" | head -n 1)
-
     if [ -z "$CERT_FILE" ]; then
         echo "Error: No AWS certificate file found in ./AWS"
         exit 1
     fi
 
-    # Extract the ID from the certificate file name
     ID=$(basename "$CERT_FILE" .cert.pem)
-
     echo "Using AWS Connection ID: $ID"
 
-    # Copy the original MA3D.cfg file to the target directory
-    echo -n "Copying MA3D.cfg to ${TARGET_CFG_PATH}... "
-    cp "./config/MA3D.cfg" "$TARGET_CFG_PATH"
-    echo "[OK]"
-
-    # Update the 'id' value in MA3D.cfg
-    echo -n "Updating 'id' value in MA3D.cfg with '$ID'... "
+    cp "$ORIGINAL_CFG_FILE" "$TARGET_CFG_PATH"
     sed -i "s/^id:.*$/id: ${ID}/" "$TARGET_CFG_PATH"
-    echo "[OK]"
+    echo "[OK] Updated 'id' in MA3D.cfg"
+
+    # Zrok 환경 파일 경로
+    ENV_FILE="/opt/openziti/etc/zrok/zrok-share.env"
+
+    ID_LOWER=$(echo "$ID" | tr '[:upper:]' '[:lower:]')  # ID를 소문자로 변환
+
+    # 변경할 변수들
+    VARIABLES=(
+        "ZROK_ENABLE_TOKEN=\"edAmlRZl7u2k\""
+        "ZROK_ENVIRONMENT_NAME=\"$ID_LOWER\""
+        "ZROK_UNIQUE_NAME=\"$ID_LOWER\""
+    )
+
+    # 각 변수 처리
+    for VAR in "${VARIABLES[@]}"; do
+        KEY=$(echo "$VAR" | cut -d= -f1)  # 변수 이름 추출
+        VALUE=$(echo "$VAR" | cut -d= -f2-)  # 변수 값 추출
+
+        # 변수 이름이 있는 줄 찾기 (주석 포함)
+        if grep -q "^#\?\($KEY\)=" "$ENV_FILE"; then
+            # 기존 변수 값 변경 (주석이 포함된 경우 주석 제거)
+            sudo sed -i "s|^#\?\($KEY\)=.*|\1=$VALUE|" "$ENV_FILE"
+        else
+            # 변수 추가
+            echo "$VAR" | sudo tee -a "$ENV_FILE" > /dev/null
+        fi
+
+        # 상태 출력
+        echo "Updated $KEY in zrok-share.env"
+    done
+
+    # 특수 처리: ZROK_BACKEND_MODE="proxy" 아래의 ZROK_TARGET만 수정
+    sudo sed -i '/^ZROK_BACKEND_MODE="proxy"/{
+        n
+        s|^ZROK_TARGET=.*|ZROK_TARGET="http://127.0.0.1:80"|
+    }' "$ENV_FILE"
+
+    echo "Updated ZROK_TARGET under ZROK_BACKEND_MODE=\"proxy\" in zrok-share.env"
+
+    # Moonraker 설정 파일에서 trusted_clients 수정
+    MOONRAKER_CFG="/home/biqu/printer_data/config/moonraker.conf"
+    echo "Modifying moonraker.cfg: commenting out 127.0.0.0/8 in [authorization]"
+    sudo sed -i '/^\s*trusted_clients:/,/^$/ s|^\s*127\.0\.0\.0/8|# 127.0.0.0/8|' "$MOONRAKER_CFG"
+    echo "[OK] Updated [authorization] in moonraker.cfg"
+    
+    # Enable Zrok service
+    if ! systemctl is-active --quiet zrok-share.service; then
+        sudo systemctl enable --now zrok-share.service
+        echo "zrok-share.service is now enabled."
+    else
+        echo "zrok-share.service is already running."
+    fi
 }
 
 restart_moonraker()
@@ -120,6 +179,7 @@ restart_moonraker()
 verify_not_root
 add_updater
 install_module
+install_zrok
 create_service
 add_config
 restart_moonraker
