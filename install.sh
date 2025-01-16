@@ -171,17 +171,6 @@ EOL
     sudo systemctl daemon-reload
     sudo systemctl start cloudflared
     sudo systemctl enable cloudflared
-
-    MOONRAKER_CFG="/home/biqu/printer_data/config/moonraker.conf"
-
-    echo "Modifying moonraker.cfg: Adding cors_domain to [authorization]"
-    sudo sed -i '/^\[authorization\]/,/^$/ {
-        /cors_domain:/ s|cors_domain:.*|cors_domain: *.printer.madeall3d.com|g
-        t
-        /^\[authorization\]/ a\
-    cors_domain: *.printer.madeall3d.com
-    }' "$MOONRAKER_CFG"
-    echo "[OK] Added cors_domain: *.printer.madeall3d.com to [authorization] in moonraker.cfg"
 }
 
 restart_moonraker()
