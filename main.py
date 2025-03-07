@@ -1,20 +1,21 @@
-import mqtt
-import log
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
+"""
+MA3D 서비스 메인 파일
+이 파일은 ma3d.service에 의해 호출되는 최소한의 템플릿 코드입니다.
+실제 기능은 없으며, 서비스 실행을 위한 빈 파일입니다.
+"""
+
+import time
 
 def main():
-    logger = log.setup_logger()
-    logger.info("Application started")
-
-    try:
-        mqtt.main(logger)
-        logger.info("Subscribed to MQTT topic")
-        # 메인 로직 유지 (예: 무한 루프, 사용자 입력 처리 등)
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
-    finally:
-        logger.info("Application finished")
-
+    """메인 함수"""
+    print("MA3D 서비스가 실행 중입니다.")
+    
+    # 무한 대기 (CPU 사용량 최소화)
+    while True:
+        time.sleep(60)
 
 if __name__ == "__main__":
     main()
