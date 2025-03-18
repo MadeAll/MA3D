@@ -2,5 +2,5 @@
 type: git_repo
 path: ~/MA3D
 primary_branch: main
-origin: https://oauth2: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@github.com/MadeAll/MA3D.git
+origin: https://github.com/MadeAll/MA3D.git
 managed_services: ma3d

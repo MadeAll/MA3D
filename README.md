@@ -63,7 +63,7 @@ To install the MA3D plugin, follow these steps:
 1. **Clone the Repository**
 
 ```
-git clone https://oauth2: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@github.com/MadeAll/MA3D.git
+git clone https://github.com/MadeAll/MA3D.git
 ```
 
 2. **ADD CloudFlare DNS**
@@ -129,7 +129,7 @@ sudo systemctl start cloudflared
 Navigate to the cloned repository directory and execute the install script:
 
 ```
-cd .. && bash ./install.sh
+cd .. && bash ./install.sh ID=your_id_value
 ```
 
 This script automates the setup process, including updating the Moonraker configuration and setting up a systemd service for the MA3D plugin.

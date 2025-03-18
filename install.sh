@@ -9,8 +9,30 @@ MOONRAKER_CONFIG="${HOME}/printer_data/config/moonraker.conf"
 MA3D_SERVICE="${SYSTEMDDIR}/ma3d.service"
 MA3D_DIR="${HOME}/MA3D"
 CURRENT_USER=${USER:-"biqu"}  # 기본 값 설정
-# AWS 인증서에서 추출한 ID를 전역 변수로 선언
+
+# ID 값 초기화
 ID=""
+
+# 명령행 인자 처리
+for arg in "$@"; do
+  case $arg in
+    ID=*)
+      ID="${arg#*=}"
+      ;;
+    *)
+      # 다른 인자들 처리 (필요한 경우)
+      ;;
+  esac
+done
+
+# ID 값이 제공되었는지 확인
+if [ -z "$ID" ]; then
+  echo "Error: ID is required. Usage: ./install.sh ID=your_id_value"
+  exit 1
+fi
+
+echo "Using ID: $ID"
+
 # 임시 파일 경로
 TEMP_CONFIG="$(mktemp)"
 
@@ -54,11 +76,6 @@ check_directories() {
     # config 디렉토리 확인
     if [ ! -d "${HOME}/printer_data/config" ]; then
         mkdir -p "${HOME}/printer_data/config" || error_exit "Failed to create config directory"
-    fi
-    
-    # AWS 디렉토리 확인
-    if [ ! -d "./AWS" ]; then
-        error_exit "AWS directory not found in current directory"
     fi
     
     # config 디렉토리 확인
@@ -146,15 +163,6 @@ add_config() {
     if [ ! -f "$ORIGINAL_CFG_FILE" ]; then
         error_exit "Configuration file not found at $ORIGINAL_CFG_FILE"
     fi
-
-    CERT_FILE=$(find "./AWS" -name "*.cert.pem" | head -n 1)
-    if [ -z "$CERT_FILE" ]; then
-        error_exit "No AWS certificate file found in ./AWS"
-    fi
-
-    # ID를 전역 변수로 설정
-    ID=$(basename "$CERT_FILE" .cert.pem)
-    echo "Using AWS Connection ID: $ID"
 
     cp "$ORIGINAL_CFG_FILE" "$TARGET_CFG_PATH" || error_exit "Failed to copy configuration file"
     sed -i "s/^id:.*$/id: ${ID}/" "$TARGET_CFG_PATH" || error_exit "Failed to update ID in configuration file"
