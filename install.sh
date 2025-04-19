@@ -94,38 +94,36 @@ add_updater() {
         error_exit "moonraker.conf not found at $MOONRAKER_CONFIG"
     fi
     
-    # Define pattern to search for the existing updater section
-    start_pattern='^\[update_manager[a-z ]* ma3d\]'
-    end_pattern='^\['
-    # Use awk to remove the existing section if it exists
-    # This awk script checks lines between start_pattern and the next section start (end_pattern)
-    # and excludes them from the output.
-    awk -v start="$start_pattern" -v end="$end_pattern" '
-        $0 ~ start {flag=1; next}
-        $0 ~ end && flag {flag=0}
-        !flag
-    ' "$MOONRAKER_CONFIG" > "$TEMP_CONFIG" || error_exit "Failed to process moonraker.conf"
-    
-    # 임시 파일을 원본으로 이동
-    mv "$TEMP_CONFIG" "$MOONRAKER_CONFIG" || error_exit "Failed to update moonraker.conf"
-
-    echo -n "Adding or updating update manager in moonraker.conf... "
     # update_manager.txt 파일 존재 확인
     if [ ! -f "./config/update_manager.txt" ]; then
         error_exit "update_manager.txt not found in ./config directory"
     fi
+
+    # 임시 파일 생성
+    TEMP_CONFIG=$(mktemp)
     
-    # Append the new updater configuration from update_manager.txt
-    cat "./config/update_manager.txt" >> "$MOONRAKER_CONFIG" || error_exit "Failed to append update manager configuration"
+    # 기존 MA3D update_manager 섹션 제거
+    awk '
+        BEGIN { in_section = 0 }
+        /^\[update_manager[a-z ]* ma3d\]/ { in_section = 1; next }
+        /^\[/ && in_section { in_section = 0 }
+        !in_section { print }
+    ' "$MOONRAKER_CONFIG" > "$TEMP_CONFIG" || error_exit "Failed to process moonraker.conf"
+
+    # 새로운 MA3D update_manager 섹션 추가
+    echo -e "\n# MA3D Update Manager Configuration" >> "$TEMP_CONFIG"
+    cat "./config/update_manager.txt" >> "$TEMP_CONFIG" || error_exit "Failed to append update manager configuration"
+    
+    # 임시 파일을 원본으로 이동
+    mv "$TEMP_CONFIG" "$MOONRAKER_CONFIG" || error_exit "Failed to update moonraker.conf"
     echo "[OK]"
 
-    # moonraker.asvc 파일 존재 확인
+    # moonraker.asvc 파일 업데이트
+    echo -n "Checking and updating moonraker.asvc... "
     if [ ! -f "$MOONRAKER_ASVC" ]; then
         touch "$MOONRAKER_ASVC" || error_exit "Failed to create moonraker.asvc"
     fi
     
-    # Add service access to Moonraker, if not already present
-    echo -n "Checking and updating moonraker.asvc... "
     if ! grep -q "ma3d" "$MOONRAKER_ASVC"; then
         echo -e "\nma3d" >> "$MOONRAKER_ASVC" || error_exit "Failed to update moonraker.asvc"
         echo "[UPDATED]"
@@ -182,7 +180,8 @@ create_cloudflare_service() {
         echo "Tunnel 'printer-$ID' already exists. Skipping creation."
     else
         echo "Creating Cloudflare tunnel with ID 'printer-$ID'..."
-        cloudflared tunnel create "printer-$ID" || error_exit "Failed to create Cloudflare tunnel"
+        cloudflared tunnel create printer-$ID || error_exit "Failed to create Cloudflare tunnel"
+        cloudflared tunnel route dns printer-$ID printer-$ID.madeall3d.com || error_exit "Failed to create Cloudflare tunnel"
     fi
 
     echo "Cloudflare tunnel setup complete."

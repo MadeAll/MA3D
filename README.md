@@ -79,57 +79,12 @@ cloudflared tunnel login
 ```
 After login to cloudflare, Add dns service.
 
-```
-cloudflared tunnel create printer-${printerID}
-
-cloudflared tunnel route dns printer-${printerID} printer-${printerID}.madeall3d.com
-
-sudo mkdir -p /etc/cloudflared 
-```
-After making service folder, add config.yml
-```
-tunnel: printer-1stmpf33chlzebsuaqgi
-credentials-file: /home/biqu/.cloudflared/7fcf34ef-fcff-408b-8be9-184eb1de2b30.json 
-
-ingress:
-  - hostname: printer-1stmpf33chlzebsuaqgi.madeall3d.com
-    service: http://localhost:80
-  - service: http_status:404
-```
-Set as service and make it work
-```
-sudo nano /etc/systemd/system/cloudflared.service
-```
-Context of service
-```
-[Unit]
-Description=Cloudflare Tunnel Service
-After=network.target
-
-[Service]
-Type=simple
-Restart=always
-RestartSec=5s
-ExecStart=/usr/local/bin/cloudflared tunnel run printer-1stmpf33chlzebsuaqgi
-WorkingDirectory=/etc/cloudflared
-User=root
-
-[Install]
-WantedBy=multi-user.target
-```
-Enable Serivce
-```
-sudo systemctl daemon-reload
-sudo systemctl enable cloudflared
-sudo systemctl start cloudflared
-```
-
 3. **Run the Installation Script**
 
 Navigate to the cloned repository directory and execute the install script:
 
 ```
-cd .. && bash ./install.sh ID=your_id_value
+cd MA3D && bash ./install.sh ID=your_id_value
 ```
 
 This script automates the setup process, including updating the Moonraker configuration and setting up a systemd service for the MA3D plugin.

@@ -1,0 +1,6 @@
+{
+    "board": "arduino:avr:nano",
+    "sketch": "piezo_sensor.ino",
+    "configuration": "cpu=atmega328",
+    "port": "COM4"
+}
